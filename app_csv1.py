@@ -17,6 +17,7 @@ st.markdown("""
     <style>
         .block-container {padding-top: 1rem; padding-bottom: 2rem;}
         [data-testid="stMetricValue"] {font-size: 1.6rem !important;}
+        /* Estilo para los uploaders en móvil */
         [data-testid="stFileUploader"] {padding: 10px; border: 1px dashed #4CAF50; border-radius: 10px;}
     </style>
 """, unsafe_allow_html=True)
@@ -33,7 +34,7 @@ def cargar_datos(archivo, columnas):
 def guardar_datos(df, archivo):
     df.to_csv(archivo, index=False)
 
-# Columnas y Datos Maestros
+# Columnas y Categorías
 COLS_MOVS = ['Fecha', 'Tipo', 'Categoria', 'Concepto', 'Monto']
 COLS_PRES = ['Categoria', 'Limite_Mensual']
 
@@ -48,25 +49,30 @@ CATEGORIAS = [
     "Nómina (UNAM)", "Otros Ingresos (Bonos/Aguinaldo)", "Préstamos Recibidos"
 ]
 
-TARJETAS = ["BBVA", "AMEX", "Mercado Libre", "Liverpool", "Banorte", "Otra"]
-
-# --- BARRA LATERAL: GESTIÓN DE ARCHIVOS ---
+# --- BARRA LATERAL: GESTIÓN DE ARCHIVOS (CRUCIAL) ---
 with st.sidebar:
     st.title("📂 Gestión de Datos")
-    st.info("ℹ️ Usa esto para respaldar o restaurar tu información.")
     
-    with st.expander("📤 CARGAR RESPALDO", expanded=True):
-        uploaded_movs = st.file_uploader("1. Movimientos (.csv)", type="csv", key="up_movs")
+    st.info("ℹ️ Si la app se reinició, carga tu último respaldo aquí para recuperar tu historial.")
+    
+    with st.expander("📤 CARGAR RESPALDO (Restaurar)", expanded=True):
+        # Uploader para Movimientos
+        uploaded_movs = st.file_uploader("1. Archivo de Movimientos (.csv)", type="csv", key="up_movs")
         if uploaded_movs is not None:
             try:
+                # Leemos y sobrescribimos el archivo local
                 df_up = pd.read_csv(uploaded_movs)
+                # Validar columnas mínimas
                 if all(col in df_up.columns for col in COLS_MOVS):
                     guardar_datos(df_up, FILE_MOVS)
                     st.success("✅ Historial recuperado")
+                else:
+                    st.error("El archivo no tiene el formato correcto.")
             except Exception as e:
                 st.error(f"Error: {e}")
 
-        uploaded_pres = st.file_uploader("2. Presupuesto (.csv)", type="csv", key="up_pres")
+        # Uploader para Presupuesto
+        uploaded_pres = st.file_uploader("2. Archivo de Presupuesto (.csv)", type="csv", key="up_pres")
         if uploaded_pres is not None:
             try:
                 df_up_p = pd.read_csv(uploaded_pres)
@@ -77,95 +83,63 @@ with st.sidebar:
 
     st.divider()
     
-    # Botón de Descarga
+    st.subheader("💾 Guardar Cambios")
+    # Botón de Descarga (Siempre visible en sidebar)
     df_down = cargar_datos(FILE_MOVS, COLS_MOVS)
     if not df_down.empty:
         csv = df_down.to_csv(index=False).encode('utf-8')
-        st.download_button("📥 DESCARGAR RESPALDO ACTUAL", csv, f"finanzas_respaldo_{datetime.date.today()}.csv", "text/csv", type="primary")
+        st.download_button(
+            label="📥 DESCARGAR RESPALDO ACTUAL",
+            data=csv,
+            file_name=f"finanzas_respaldo_{datetime.date.today()}.csv",
+            mime="text/csv",
+            type="primary" # Botón destacado
+        )
+        
+    # Descarga de Presupuesto (Opcional)
+    df_pres_down = cargar_datos(FILE_PRESUPUESTO, COLS_PRES)
+    if not df_pres_down.empty:
+        csv_p = df_pres_down.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="📥 Descargar Presupuesto",
+            data=csv_p,
+            file_name="presupuesto_respaldo.csv",
+            mime="text/csv"
+        )
 
 # --- PANTALLA PRINCIPAL ---
 st.title("💳 Control Financiero")
 
-# --- SECCIÓN 1: FORMULARIO DE REGISTRO (CON MSI) ---
+# --- SECCIÓN 1: FORMULARIO ---
 with st.container():
     with st.expander("➕ **NUEVO MOVIMIENTO** (Toca para abrir)", expanded=True):
-        # Pestañas para separar Gasto Normal de MSI
-        tab_diario, tab_msi = st.tabs(["📅 Gasto Diario / Ingreso", "💳 Compras a MSI"])
-
-        # --- FORMULARIO NORMAL ---
-        with tab_diario:
-            with st.form("entry_form", clear_on_submit=True):
-                c1, c2 = st.columns(2)
-                fecha = c1.date_input("Fecha", datetime.date.today())
-                tipo = c2.radio("Tipo", ["Gasto", "Ingreso"], horizontal=True)
-                
-                df_pres = cargar_datos(FILE_PRESUPUESTO, COLS_PRES)
-                cat_list = sorted(list(set(CATEGORIAS + df_pres['Categoria'].tolist()))) if not df_pres.empty else CATEGORIAS
-                
-                categoria = st.selectbox("Categoría", cat_list)
-                
-                c3, c4 = st.columns([2, 1])
-                concepto = c3.text_input("Concepto (Opcional)")
-                monto = c4.number_input("Monto ($)", min_value=0.0, step=10.0)
-                
-                if st.form_submit_button("💾 Guardar Registro", type="primary", use_container_width=True):
-                    if monto > 0:
-                        df_movs = cargar_datos(FILE_MOVS, COLS_MOVS)
-                        nuevo_reg = pd.DataFrame([{
-                            'Fecha': fecha, 'Tipo': tipo, 'Categoria': categoria, 
-                            'Concepto': concepto, 'Monto': monto
-                        }])
-                        df_movs = pd.concat([df_movs, nuevo_reg], ignore_index=True)
-                        guardar_datos(df_movs, FILE_MOVS)
-                        st.toast(f"✅ {tipo} registrado correctamente", icon='🎉')
-                        st.rerun()
-                    else:
-                        st.toast("⚠️ Monto inválido", icon='❌')
-
-        # --- FORMULARIO MSI (NUEVO) ---
-        with tab_msi:
-            st.caption("Esto generará automáticamente los cargos futuros para cada mes.")
-            with st.form("msi_form", clear_on_submit=True):
-                col_m1, col_m2 = st.columns(2)
-                concepto_msi = col_m1.text_input("Producto (ej. iPhone)")
-                monto_total_msi = col_m2.number_input("Monto TOTAL de la compra ($)", min_value=0.0)
-                
-                col_m3, col_m4, col_m5 = st.columns(3)
-                tarjeta_msi = col_m3.selectbox("Tarjeta", TARJETAS)
-                meses_msi = col_m4.selectbox("Plazo (Meses)", [3, 6, 9, 12, 18, 24])
-                cat_msi = col_m5.selectbox("Categoría del Gasto", cat_list)
-                
-                fecha_inicio_msi = st.date_input("Fecha de compra (1er cobro)", datetime.date.today())
-                
-                if st.form_submit_button("🚀 Calcular y Proyectar MSI", type="primary", use_container_width=True):
-                    if monto_total_msi > 0:
-                        df_movs = cargar_datos(FILE_MOVS, COLS_MOVS)
-                        monto_mensual = monto_total_msi / meses_msi
-                        
-                        nuevos_cargos = []
-                        fecha_iter = pd.to_datetime(fecha_inicio_msi)
-                        
-                        for i in range(meses_msi):
-                            # Generar fila para cada mes
-                            row = {
-                                'Fecha': fecha_iter.date(),
-                                'Tipo': 'Gasto',
-                                'Categoria': cat_msi,
-                                'Concepto': f"{concepto_msi} ({i+1}/{meses_msi}) | {tarjeta_msi}",
-                                'Monto': round(monto_mensual, 2)
-                            }
-                            nuevos_cargos.append(row)
-                            # Sumar un mes a la fecha
-                            fecha_iter = fecha_iter + pd.DateOffset(months=1)
-                        
-                        df_nuevos = pd.DataFrame(nuevos_cargos)
-                        df_movs = pd.concat([df_movs, df_nuevos], ignore_index=True)
-                        guardar_datos(df_movs, FILE_MOVS)
-                        
-                        st.toast(f"✅ Se generaron {meses_msi} cargos futuros de ${monto_mensual:,.2f}", icon='💳')
-                        st.rerun()
-                    else:
-                        st.error("El monto total debe ser mayor a 0")
+        with st.form("entry_form", clear_on_submit=True):
+            c1, c2 = st.columns(2)
+            fecha = c1.date_input("Fecha", datetime.date.today())
+            tipo = c2.radio("Tipo", ["Gasto", "Ingreso"], horizontal=True)
+            
+            df_pres = cargar_datos(FILE_PRESUPUESTO, COLS_PRES)
+            cat_list = sorted(list(set(CATEGORIAS + df_pres['Categoria'].tolist()))) if not df_pres.empty else CATEGORIAS
+            
+            categoria = st.selectbox("Categoría", cat_list)
+            
+            c3, c4 = st.columns([2, 1])
+            concepto = c3.text_input("Concepto (Opcional)")
+            monto = c4.number_input("Monto ($)", min_value=0.0, step=10.0)
+            
+            if st.form_submit_button("💾 Guardar", type="primary", use_container_width=True):
+                if monto > 0:
+                    df_movs = cargar_datos(FILE_MOVS, COLS_MOVS)
+                    nuevo_reg = pd.DataFrame([{
+                        'Fecha': fecha, 'Tipo': tipo, 'Categoria': categoria, 
+                        'Concepto': concepto, 'Monto': monto
+                    }])
+                    df_movs = pd.concat([df_movs, nuevo_reg], ignore_index=True)
+                    guardar_datos(df_movs, FILE_MOVS)
+                    st.toast(f"✅ ¡{tipo} registrado!", icon='🎉')
+                    st.rerun()
+                else:
+                    st.toast("⚠️ Monto inválido", icon='❌')
 
 # --- SECCIÓN 2: PESTAÑAS ---
 st.write(" ")
@@ -176,18 +150,16 @@ with tab_dash:
     df = cargar_datos(FILE_MOVS, COLS_MOVS)
     
     if df.empty:
-        st.info("👋 Registra tu primer movimiento arriba.")
+        st.info("👋 La app se ha reiniciado o es nueva. Abre el MENÚ LATERAL (arriba izquierda >) para cargar tu respaldo o registra un gasto nuevo.")
     else:
         df['Fecha'] = pd.to_datetime(df['Fecha'])
         
-        # Filtro de Mes
         col_filtro, _ = st.columns([1, 2])
-        mes_sel = col_filtro.date_input("📅 Mes a analizar:", datetime.date.today())
+        mes_sel = col_filtro.date_input("📅 Mes:", datetime.date.today())
         
         mask = (df['Fecha'].dt.year == mes_sel.year) & (df['Fecha'].dt.month == mes_sel.month)
         df_mes = df[mask]
         
-        # KPIs
         ingresos = df_mes[df_mes['Tipo'] == 'Ingreso']['Monto'].sum()
         gastos = df_mes[df_mes['Tipo'] == 'Gasto']['Monto'].sum()
         balance = ingresos - gastos
@@ -260,6 +232,7 @@ with tab_pres:
             guardar_datos(df_p, FILE_PRESUPUESTO)
             st.toast("✅ Meta actualizada", icon='🎯')
             st.rerun()
+
     st.dataframe(cargar_datos(FILE_PRESUPUESTO, COLS_PRES), use_container_width=True, column_config={"Limite_Mensual": st.column_config.NumberColumn(format="$%.2f")})
 
 # === TAB 3: HISTORIAL ===
