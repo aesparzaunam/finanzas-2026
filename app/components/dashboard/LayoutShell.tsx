@@ -22,7 +22,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
     };
 
     if (loading) {
-        return <div className={styles.shell} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        return <div className={styles.loadingOverlay}>
             <p>Cargando sesión...</p>
         </div>;
     }

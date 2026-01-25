@@ -42,32 +42,41 @@ export default function RegisterPage() {
             <div className={styles.card}>
                 <h1 className={styles.title}>Create Account</h1>
                 <form onSubmit={handleSubmit} className={styles.form}>
-                    {error && <div className={styles.error}>{error}</div>}
+                    {error && <div className={styles.error} role="alert">{error}</div>}
                     <div className={styles.inputGroup}>
-                        <label className={styles.label}>Name</label>
+                        <label htmlFor="name" className={styles.label}>Name</label>
                         <input
+                            id="name"
                             className={styles.input}
                             type="text"
+                            placeholder="Your Name"
+                            title="Full Name"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             required
                         />
                     </div>
                     <div className={styles.inputGroup}>
-                        <label className={styles.label}>Email</label>
+                        <label htmlFor="email" className={styles.label}>Email</label>
                         <input
+                            id="email"
                             className={styles.input}
                             type="email"
+                            placeholder="email@example.com"
+                            title="Email Address"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
                         />
                     </div>
                     <div className={styles.inputGroup}>
-                        <label className={styles.label}>Password</label>
+                        <label htmlFor="password" className={styles.label}>Password</label>
                         <input
+                            id="password"
                             className={styles.input}
                             type="password"
+                            placeholder="••••••"
+                            title="Password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required

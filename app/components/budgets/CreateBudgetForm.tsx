@@ -60,8 +60,10 @@ export default function CreateBudgetForm({ onSuccess }: { onSuccess: () => void 
             <div className={styles.formGroup}>
                 <label className={styles.label}>Category</label>
                 <select
+                    id="category-select"
                     className={styles.select}
                     value={categoryId}
+                    title="Select Category"
                     onChange={(e) => setCategoryId(e.target.value)}
                     required
                 >

@@ -91,8 +91,10 @@ export default function AccountsPage() {
                         <div className={styles.inputGroup}>
                             <label className={styles.label}>Type</label>
                             <select
+                                id="account-type"
                                 className={styles.select}
                                 value={type}
+                                title="Select Account Type"
                                 onChange={e => setType(e.target.value)}
                             >
                                 <option value="BANK">Bank Account</option>

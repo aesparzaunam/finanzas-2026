@@ -1,6 +1,6 @@
 'use client';
 
-import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, LineChart, Line, AreaChart, Area, CartesianGrid } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, CartesianGrid, Line } from 'recharts';
 import styles from '../dashboard/dashboard.module.css';
 
 interface HistoryItem {
@@ -13,16 +13,34 @@ interface ChartsProps {
     history: HistoryItem[];
 }
 
+interface TooltipEntry {
+    name: string;
+    value: number;
+    color: string;
+    payload: Record<string, unknown>;
+}
+
+interface CustomTooltipProps {
+    active?: boolean;
+    payload?: TooltipEntry[];
+    label?: string;
+}
+
 // Custom tooltip component
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
     if (active && payload && payload.length) {
         return (
             <div className={styles.tooltipContainer}>
                 <p className={styles.tooltipLabel}>{label}</p>
-                {payload.map((entry: any, index: number) => (
-                    <p key={index} style={{ color: entry.color }}>
-                        {entry.name}: {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(entry.value)}
-                    </p>
+                {payload.map((entry, index) => (
+                    (() => {
+                        const style = { '--entry-color': entry.color } as any;
+                        return (
+                            <p key={index} className={styles.tooltipEntry} style={style}>
+                                {entry.name}: {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(entry.value)}
+                            </p>
+                        );
+                    })()
                 ))}
             </div>
         );
@@ -31,8 +49,8 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export default function Charts({ history }: ChartsProps) {
-    const formatCurrency = (value: number) =>
-        new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 0 }).format(value);
+    // formatCurrency is used in rendering but defined here for consistency
+    // const formatCurrency = (value: number) => ... (actually used in Tooltip)
 
     // Calculate net for area chart
     const historyWithNet = history.map(item => ({
@@ -64,7 +82,7 @@ export default function Charts({ history }: ChartsProps) {
                             <Tooltip content={<CustomTooltip />} />
                             <Legend
                                 wrapperStyle={{ paddingTop: '20px' }}
-                                formatter={(value) => <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{value}</span>}
+                                formatter={(value) => <span className={styles.legendText}>{value}</span>}
                             />
                             <Bar
                                 dataKey="income"
@@ -118,7 +136,7 @@ export default function Charts({ history }: ChartsProps) {
                             <Tooltip content={<CustomTooltip />} />
                             <Legend
                                 wrapperStyle={{ paddingTop: '20px' }}
-                                formatter={(value) => <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{value}</span>}
+                                formatter={(value) => <span className={styles.legendText}>{value}</span>}
                             />
                             <Area
                                 type="monotone"

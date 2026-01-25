@@ -168,7 +168,7 @@ export default function MSIPage() {
                                 ))}
                             </select>
                         </div>
-                        <div className={formStyles.inputGroup} style={{ gridColumn: 'span 2' }}>
+                        <div className={`${formStyles.inputGroup} ${styles.spanGrid2}`}>
                             <label className={formStyles.label} htmlFor="description">Descripción</label>
                             <input
                                 id="description"
@@ -181,7 +181,7 @@ export default function MSIPage() {
                     </div>
 
                     {totalAmount && (
-                        <div style={{ marginTop: '1rem', padding: '1rem', background: 'var(--primary-light)', borderRadius: 'var(--radius-lg)' }}>
+                        <div className={styles.infoBox}>
                             <strong>Pago mensual: </strong>
                             {formatCurrency(Number(totalAmount) / Number(months))} x {months} meses
                         </div>
@@ -194,7 +194,7 @@ export default function MSIPage() {
             </div>
 
             {/* MSI Plans List */}
-            <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--font-semibold)', marginBottom: 'var(--space-4)' }}>
+            <h2 className={styles.sectionTitle}>
                 Compras Activas
             </h2>
 
@@ -210,28 +210,30 @@ export default function MSIPage() {
                         <div key={plan.id} className={styles.card}>
                             <div className={styles.cardTitle}>{plan.description || 'Compra MSI'}</div>
                             <div className={styles.cardValue}>{formatCurrency(plan.totalAmount)}</div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+                            <div className={`${styles.flexBetween} ${styles.textSmSecondary}`}>
                                 <span>{plan.months} meses</span>
                                 <span>{formatCurrency(plan.monthlyAmount)}/mes</span>
                             </div>
-                            <div style={{ marginTop: 'var(--space-3)' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-xs)', marginBottom: 'var(--space-1)' }}>
+                            <div className={styles.mt3}>
+                                <div className={`${styles.flexBetween} ${styles.textXsMuted} ${styles.mb4}`}>
                                     <span>Progreso</span>
                                     <span>{plan.paidMonths}/{plan.months} meses</span>
                                 </div>
-                                <div style={{ height: '8px', background: 'var(--border-light)', borderRadius: 'var(--radius-full)', overflow: 'hidden' }}>
-                                    <div
-                                        style={{
-                                            height: '100%',
-                                            width: `${(plan.paidMonths / plan.months) * 100}%`,
-                                            background: 'linear-gradient(90deg, var(--primary), var(--primary-dark))',
-                                            borderRadius: 'var(--radius-full)',
-                                            transition: 'width 0.5s ease'
-                                        }}
-                                    />
+                                <div className={styles.progressBarWrapper}>
+                                    {(() => {
+                                        const style = {
+                                            '--progress-width': `${(plan.paidMonths / plan.months) * 100}%`
+                                        } as any;
+                                        return (
+                                            <div
+                                                className={styles.progressBar}
+                                                style={style}
+                                            />
+                                        );
+                                    })()}
                                 </div>
                             </div>
-                            <div style={{ marginTop: 'var(--space-2)', fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+                            <div className={`${styles.mt2} ${styles.textXsMuted}`}>
                                 Inicio: {formatDate(plan.startDate)}
                             </div>
                         </div>

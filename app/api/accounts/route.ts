@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/app/lib/prisma';
 import { cookies } from 'next/headers';
+import { AccountType } from '@prisma/client';
 
 export async function GET() {
     try {
@@ -48,7 +49,7 @@ export async function POST(request: Request) {
             data: {
                 userId,
                 name,
-                type: type as any,
+                type: type as AccountType,
                 balance: Number(balance),
                 currency: currency || 'USD',
             },
@@ -56,7 +57,6 @@ export async function POST(request: Request) {
 
         return NextResponse.json(account, { status: 201 });
 
-        return NextResponse.json(account, { status: 201 });
     } catch (error) {
         console.error('Failed to create account:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

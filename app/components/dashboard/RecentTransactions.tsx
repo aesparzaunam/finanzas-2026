@@ -30,17 +30,14 @@ export default function RecentTransactions() {
                             .slice(0, 5);
                         setTransactions(recent);
                     } else {
-                        console.error('Expected array of transactions, got:', data);
                         setTransactions([]);
                     }
                 } else if (res.status === 401) {
-                    console.log('Unauthorized fetch for transactions');
                     setTransactions([]);
                 }
                 setLoading(false);
             })
-            .catch((err) => {
-                console.error('Fetch error:', err);
+            .catch(() => {
                 setLoading(false);
             });
     }, []);
@@ -51,14 +48,14 @@ export default function RecentTransactions() {
     const formatDate = (dateString: string) =>
         new Date(dateString).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
 
-    const getTypeColor = (type: string) => {
+    const getTypeClass = (type: string) => {
         switch (type) {
-            case 'INCOME': return 'var(--success)';
+            case 'INCOME': return styles.income;
             case 'EXPENSE':
-            case 'MSI_CHARGE': return 'var(--danger)';
-            case 'TRANSFER': return 'var(--info)';
-            case 'PAGO_TARJETA': return 'var(--warning)';
-            default: return 'var(--text-secondary)';
+            case 'MSI_CHARGE': return styles.expense;
+            case 'TRANSFER': return styles.transfer;
+            case 'PAGO_TARJETA': return styles.trendNeutral; // Use existing color class
+            default: return '';
         }
     };
 
@@ -110,10 +107,7 @@ export default function RecentTransactions() {
                                 {tx.account.name} · {formatDate(tx.date)}
                             </div>
                         </div>
-                        <div
-                            className={styles.recentAmount}
-                            style={{ color: getTypeColor(tx.type) }}
-                        >
+                        <div className={`${styles.recentAmount} ${getTypeClass(tx.type)}`}>
                             {getTypeSign(tx.type)}{formatCurrency(Number(tx.amount))}
                         </div>
                     </div>

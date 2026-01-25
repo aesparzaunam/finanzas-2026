@@ -104,13 +104,24 @@
     right: 0;
     bottom: 0;
     background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 1000;
     animation: fadeIn 0.2s ease-out;
+}
+
+.centeredCell {
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.categoryName {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
 }
 
 .modalContent {

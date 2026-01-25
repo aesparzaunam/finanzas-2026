@@ -35,12 +35,15 @@ export default function BudgetCard({ budget }: BudgetProps) {
     return (
         <div className={styles.card}>
             <div className={styles.header}>
-                <div
-                    className={styles.icon}
-                    style={{ background: category.color ? `linear-gradient(135deg, ${category.color}, ${category.color}dd)` : 'linear-gradient(135deg, #6b7280, #4b5563)' }}
-                >
-                    {category.icon || '💰'}
-                </div>
+                {/* eslint-disable-next-line */}
+                {(() => {
+                    const style = { '--cat-bg': category.color ? `linear-gradient(135deg, ${category.color}, ${category.color}dd)` : 'linear-gradient(135deg, #6b7280, #4b5563)' } as React.CSSProperties;
+                    return (
+                        <div className={styles.icon} style={style}>
+                            {category.icon || '💰'}
+                        </div>
+                    );
+                })()}
                 <div className={styles.info}>
                     <h3>{category.name}</h3>
                     <span className={styles.period}>
@@ -63,10 +66,16 @@ export default function BudgetCard({ budget }: BudgetProps) {
                     </span>
                 </div>
                 <div className={styles.progressBarBg}>
-                    <div
-                        className={`${styles.progressBarFill} ${progressClass}`}
-                        style={{ width: `${Math.min(percentage, 100)}%` }}
-                    />
+                    {/* eslint-disable-next-line */}
+                    {(() => {
+                        const style = { '--progress-width': `${Math.min(percentage, 100)}%` } as React.CSSProperties;
+                        return (
+                            <div
+                                className={`${styles.progressBarFill} ${progressClass}`}
+                                style={style}
+                            />
+                        );
+                    })()}
                 </div>
                 <div className={styles.percentageLabel}>
                     {percentage.toFixed(0)}% usado

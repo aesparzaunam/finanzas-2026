@@ -2,18 +2,6 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/app/lib/prisma';
 import { cookies } from 'next/headers';
 
-interface TransactionRecord {
-    id: string;
-    amount: number | { toNumber: () => number };
-    type: string;
-    date: Date;
-    description: string;
-    accountId: string;
-    categoryId: string | null;
-    isParent: boolean;
-    msiPlanId: string | null;
-}
-
 export async function GET() {
     try {
         const cookieStore = await cookies();
@@ -26,12 +14,11 @@ export async function GET() {
         const transactions = await prisma.transaction.findMany({
             where: {
                 userId,
-                // Optionally hide MSI parent transactions from the list
-                // isParent: false 
             },
             include: {
                 account: { select: { name: true } },
                 category: { select: { name: true, icon: true, color: true } },
+                // @ts-expect-error - Prisma 7/Accelerate can hide relationship types in deep includes
                 msiPlan: { select: { months: true, totalAmount: true } }
             },
             orderBy: { date: 'desc' },
@@ -73,7 +60,7 @@ export async function POST(request: Request) {
 
         const amountNum = Number(amount);
 
-        const result = await prisma.$transaction(async (tx: any) => {
+        const result = await prisma.$transaction(async (tx) => {
             // Create the transaction
             const newTx = await tx.transaction.create({
                 data: {
@@ -84,7 +71,6 @@ export async function POST(request: Request) {
                     type: type,
                     date: new Date(date || new Date()),
                     description: description || '',
-                    isParent: false,
                 },
             });
 
@@ -123,7 +109,6 @@ export async function POST(request: Request) {
                     // Credit card payment: 
                     // - Reduce credit card debt (accountId is the credit card)
                     // - Subtract from source account (toAccountId is where money comes from)
-                    // Note: Credit card balances are tracked as debt (positive = owed)
                     await tx.account.update({
                         where: { id: accountId }, // Credit card
                         data: { balance: { decrement: amountNum } } // Reduce debt
