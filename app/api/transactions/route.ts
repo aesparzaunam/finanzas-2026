@@ -18,7 +18,6 @@ export async function GET() {
             include: {
                 account: { select: { name: true } },
                 category: { select: { name: true, icon: true, color: true } },
-                // @ts-expect-error - Prisma 7/Accelerate can hide relationship types in deep includes
                 msiPlan: { select: { months: true, totalAmount: true } }
             },
             orderBy: { date: 'desc' },
@@ -60,7 +59,7 @@ export async function POST(request: Request) {
 
         const amountNum = Number(amount);
 
-        const result = await prisma.$transaction(async (tx) => {
+        const result = await prisma.$transaction(async (tx: any) => {
             // Create the transaction
             const newTx = await tx.transaction.create({
                 data: {

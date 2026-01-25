@@ -14,7 +14,7 @@
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
     "@prisma/adapter-neon": "^7.3.0",
-    "@prisma/client": "^7.3.0",
+    "@prisma/client": "^5.22.0",
     "@prisma/extension-accelerate": "^3.0.1",
     "bcryptjs": "^3.0.3",
     "js-cookie": "^3.0.5",
@@ -34,7 +34,7 @@
     "dotenv": "^17.2.3",
     "eslint": "^9",
     "eslint-config-next": "16.1.4",
-    "prisma": "^7.3.0",
+    "prisma": "^5.22.0",
     "typescript": "^5"
   }
 }
