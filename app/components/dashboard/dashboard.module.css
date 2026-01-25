@@ -452,7 +452,9 @@
     transition: all var(--transition-fast);
 }
 
-color: var(--danger);
+.logoutBtn:hover {
+    color: var(--danger);
+    border-color: var(--danger);
 }
 
 .logoutText {
