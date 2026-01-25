@@ -21,9 +21,11 @@ function createPrismaClient() {
     // 1. Prisma Accelerate (Preferred Option)
     if (accelerateUrl?.startsWith("prisma://") || databaseUrl?.startsWith("prisma://")) {
         console.log("[Prisma] Using Accelerate (Data Proxy)");
-        // We override the DATABASE_URL in the environment to ensure the client picks it up
-        if (accelerateUrl) process.env.DATABASE_URL = accelerateUrl;
-        return new PrismaClient().$extends(withAccelerate());
+        // Prisma 7+: Specify accelerateUrl in the constructor
+        const client = new PrismaClient({
+            accelerateUrl: accelerateUrl || databaseUrl,
+        } as any);
+        return client.$extends(withAccelerate());
     }
 
     // 2. Neon Driver Adapter (Fallback Option)
