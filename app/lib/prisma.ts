@@ -43,7 +43,11 @@ function createPrismaClient() {
     // 3. Fallback to standard PrismaClient
     console.log("[Prisma] Using standard PrismaClient");
     return new PrismaClient({
-        datasourceUrl: databaseUrl
+        datasources: {
+            db: {
+                url: databaseUrl
+            }
+        }
     } as any);
 }
 
