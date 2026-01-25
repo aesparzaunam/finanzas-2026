@@ -16,25 +16,30 @@ function createPrismaClient() {
     const accelerateUrl = process.env.ACCELERATE_URL || process.env.PRISMA_ACCELERATE_URL;
     const databaseUrl = process.env.DATABASE_URL;
 
+    console.log("[Prisma] Initializing client...");
+
     // 1. Prisma Accelerate (Preferred Option)
-    // Prisma 7+: Specify accelerateUrl in the constructor to use the "client" engine correctly.
-    if (accelerateUrl && (accelerateUrl.startsWith("prisma://") || databaseUrl?.startsWith("prisma://"))) {
-        const client = new PrismaClient({
-            accelerateUrl: accelerateUrl || databaseUrl,
-        });
-        return client.$extends(withAccelerate());
+    if (accelerateUrl?.startsWith("prisma://") || databaseUrl?.startsWith("prisma://")) {
+        console.log("[Prisma] Using Accelerate (Data Proxy)");
+        // We override the DATABASE_URL in the environment to ensure the client picks it up
+        if (accelerateUrl) process.env.DATABASE_URL = accelerateUrl;
+        return new PrismaClient().$extends(withAccelerate());
     }
 
     // 2. Neon Driver Adapter (Fallback Option)
-    // Required in Prisma 7 when engineType = "client" and NO Accelerate URL is provided.
-    // This uses the WebAssembly engine instead of a binary engine.
-    if (databaseUrl) {
-        const pool = new Pool({ connectionString: databaseUrl });
-        const adapter = new PrismaNeon(pool as any);
-        return new PrismaClient({ adapter: adapter as any });
+    if (databaseUrl && !databaseUrl.startsWith("file:")) {
+        console.log("[Prisma] Using Neon Driver Adapter");
+        try {
+            const pool = new Pool({ connectionString: databaseUrl });
+            const adapter = new PrismaNeon(pool as any);
+            return new PrismaClient({ adapter: adapter as any });
+        } catch (error) {
+            console.error("[Prisma] Failed to initialize Neon Driver Adapter:", error);
+        }
     }
 
-    // 3. Fallback to standard PrismaClient (might throw in some Prisma 7 envs if adapter/accelerate is missing)
+    // 3. Fallback to standard PrismaClient
+    console.log("[Prisma] Using standard PrismaClient");
     return new PrismaClient();
 }
 

@@ -43,7 +43,8 @@ This project uses Prisma 7 with the `client` engine architecture. To deploy on V
 #### Required Environment Variables in Vercel:
 | Variable | Value |
 |----------|-------|
-| `DATABASE_URL` | `postgresql://user:pass@host:port/db?sslmode=require` |
+| `DATABASE_URL` | `postgresql://user:pass@host:port/pooler_db?sslmode=require` |
+| `DIRECT_URL` | `postgresql://user:pass@host:port/direct_db?sslmode=require` |
 | `ACCELERATE_URL` | `prisma://accelerate.prisma-data.net/?api_key=...` |
 
 #### Technical Note:
