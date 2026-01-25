@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState, FormEvent } from 'react';
 import LayoutShell from '../components/dashboard/LayoutShell';
 import AccountCard from '../components/accounts/AccountCard';
 import EditAccountModal from '../components/accounts/EditAccountModal';
@@ -43,7 +43,7 @@ export default function AccountsPage() {
         }
     }
 
-    const [editingAccount, setEditingAccount] = useState<any>(null);
+    const [editingAccount, setEditingAccount] = useState<Account | null>(null);
 
     const handleDelete = async (id: string) => {
         if (!confirm('¿Estás seguro de eliminar esta cuenta?')) return;
@@ -84,7 +84,7 @@ export default function AccountsPage() {
         }
     };
 
-    async function handleCreate(e: React.FormEvent) {
+    async function handleCreate(e: FormEvent) {
         e.preventDefault();
         setSubmitting(true);
         try {
@@ -125,7 +125,7 @@ export default function AccountsPage() {
                             <input
                                 className={styles.input}
                                 value={name}
-                                onChange={e => setName(e.target.value)}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
                                 placeholder="e.g. Chase Checking"
                                 required
                             />
@@ -137,7 +137,7 @@ export default function AccountsPage() {
                                 className={styles.select}
                                 value={type}
                                 title="Select Account Type"
-                                onChange={e => setType(e.target.value)}
+                                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setType(e.target.value)}
                             >
                                 <option value="BANK">Bank Account</option>
                                 <option value="CASH">Cash Wallet</option>
@@ -153,7 +153,7 @@ export default function AccountsPage() {
                                 type="number"
                                 step="0.01"
                                 value={balance}
-                                onChange={e => setBalance(e.target.value)}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBalance(e.target.value)}
                                 placeholder="0.00"
                                 required
                             />
@@ -169,7 +169,7 @@ export default function AccountsPage() {
                 <p>Loading accounts...</p>
             ) : (
                 <div className={styles.grid}>
-                    {accounts.map(acc => (
+                    {accounts.map((acc: Account) => (
                         <AccountCard
                             key={acc.id}
                             id={acc.id}

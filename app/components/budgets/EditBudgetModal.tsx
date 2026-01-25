@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import styles from './budgets.module.css';
 
 interface EditBudgetModalProps {
@@ -49,7 +49,7 @@ export default function EditBudgetModal({ budget, onClose, onSave }: EditBudgetM
                                 type="number"
                                 className={styles.input}
                                 value={amount}
-                                onChange={e => setAmount(e.target.value)}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAmount(e.target.value)}
                                 required
                             />
                         </div>
@@ -59,7 +59,7 @@ export default function EditBudgetModal({ budget, onClose, onSave }: EditBudgetM
                             <select
                                 className={styles.select}
                                 value={period}
-                                onChange={e => setPeriod(e.target.value)}
+                                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setPeriod(e.target.value)}
                             >
                                 <option value="MONTHLY">Mensual</option>
                                 <option value="YEARLY">Anual</option>
@@ -71,7 +71,7 @@ export default function EditBudgetModal({ budget, onClose, onSave }: EditBudgetM
                                 type="checkbox"
                                 id="carryOver"
                                 checked={enableCarryOver}
-                                onChange={e => setEnableCarryOver(e.target.checked)}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEnableCarryOver(e.target.checked)}
                                 style={{ width: 'auto' }}
                             />
                             <label htmlFor="carryOver" className={styles.label} style={{ marginBottom: 0 }}>
