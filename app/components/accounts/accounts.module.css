@@ -11,23 +11,25 @@
 
 .card {
     background: var(--background-alt);
-    border: 1px solid var(--border-light);
-    border-radius: var(--radius-xl);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    /* Más sutil */
+    border-radius: var(--radius-2xl);
+    /* Más redondeado */
     padding: var(--space-6);
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     min-height: 160px;
-    transition: transform var(--transition-base), box-shadow var(--transition-base), border-color var(--transition-base);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     animation: fadeIn var(--transition-slow) ease-out;
     animation-fill-mode: both;
 }
 
 .card:hover {
     transform: translateY(-4px);
-    box-shadow: var(--shadow-lg);
-    border-color: var(--primary);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    border-color: rgba(var(--primary-rgb), 0.3);
 }
 
 .header {
@@ -177,9 +179,9 @@
     border: none;
     cursor: pointer;
     padding: var(--space-2);
-    border-radius: var(--radius-md);
-    color: white;
-    /* Header text is white in cards? No, wait. */
+    border-radius: var(--radius-full);
+    /* Circular buttons looks more premium */
+    color: var(--text-secondary);
     transition: all var(--transition-fast);
     display: flex;
     align-items: center;

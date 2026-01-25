@@ -13,7 +13,7 @@ interface AccountProps {
 export default function AccountCard({ id, name, type, balance, currency, onEdit, onDelete }: AccountProps) {
     const formattedBalance = new Intl.NumberFormat('es-MX', {
         style: 'currency',
-        currency: currency,
+        currency: 'MXN',
     }).format(balance);
 
     // Map type to CSS class

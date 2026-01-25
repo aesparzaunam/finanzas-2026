@@ -346,6 +346,8 @@
     padding: var(--space-2) var(--space-2) calc(var(--space-2) + env(safe-area-inset-bottom));
     justify-content: space-around;
     z-index: 1000;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+    height: calc(60px + env(safe-area-inset-bottom));
 }
 
 @media (prefers-color-scheme: dark) {
@@ -450,10 +452,25 @@
     transition: all var(--transition-fast);
 }
 
-.logoutBtn:hover {
-    background: var(--danger-light);
-    border-color: var(--danger);
-    color: var(--danger);
+color: var(--danger);
+}
+
+.logoutText {
+    display: none;
+}
+
+.logoutIconSvg {
+    display: block;
+}
+
+@media (min-width: 768px) {
+    .logoutText {
+        display: inline;
+    }
+
+    .logoutIconSvg {
+        display: none;
+    }
 }
 
 /* ================================

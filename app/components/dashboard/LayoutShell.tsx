@@ -17,8 +17,12 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
     }, [user, loading, router]);
 
     const handleLogout = async () => {
-        await fetch('/api/auth/me', { method: 'POST' }); // Use the me route for logout as seen in me/route.ts
-        router.push('/auth/login');
+        try {
+            await fetch('/api/auth/logout', { method: 'POST' });
+            router.push('/auth/login');
+        } catch (error) {
+            console.error('Logout failed', error);
+        }
     };
 
     if (loading) {
@@ -28,7 +32,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
     }
 
     if (!user) {
-        return null; // Don't render anything while redirecting
+        return null;
     }
 
     return (
@@ -38,15 +42,16 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
                     <div className={styles.headerContent}>
                         <div className={styles.logo}>
                             <div className={styles.logoIcon}>💰</div>
-                            <span>Finanzas</span>
+                            <span className={styles.logoText}>Finanzas</span>
                         </div>
 
                         <Navbar />
 
                         <div className={styles.userMenu}>
-                            <div className={styles.userAvatar}>U</div>
-                            <button className={styles.logoutBtn} onClick={handleLogout}>
-                                Salir
+                            <div className={styles.userAvatar}>{user.email?.[0]?.toUpperCase() || 'U'}</div>
+                            <button className={styles.logoutBtn} onClick={handleLogout} aria-label="Cerrar sesión">
+                                <span className={styles.logoutText}>Salir</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={styles.logoutIconSvg}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
                             </button>
                         </div>
                     </div>
