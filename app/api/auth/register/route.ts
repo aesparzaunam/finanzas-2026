@@ -35,8 +35,12 @@ export async function POST(request: Request) {
         const { password: _, ...userWithoutPassword } = user;
 
         return NextResponse.json(userWithoutPassword, { status: 201 });
-    } catch (error) {
-        console.error('Registration error:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    } catch (error: any) {
+        console.error('Registration error details:', error);
+        return NextResponse.json({
+            error: 'Internal Server Error',
+            details: error.message,
+            code: error.code // Prisma error codes are useful
+        }, { status: 500 });
     }
 }

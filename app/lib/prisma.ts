@@ -17,6 +17,8 @@ function createPrismaClient() {
     const databaseUrl = process.env.DATABASE_URL;
 
     console.log("[Prisma] Initializing client...");
+    console.log("[Prisma] DB URL present:", !!databaseUrl);
+    console.log("[Prisma] Accelerate URL present:", !!accelerateUrl);
 
     // 1. Prisma Accelerate (Preferred Option)
     if (accelerateUrl?.startsWith("prisma://") || databaseUrl?.startsWith("prisma://")) {
@@ -43,11 +45,7 @@ function createPrismaClient() {
     // 3. Fallback to standard PrismaClient
     console.log("[Prisma] Using standard PrismaClient");
     return new PrismaClient({
-        datasources: {
-            db: {
-                url: databaseUrl
-            }
-        }
+        datasourceUrl: databaseUrl
     } as any);
 }
 
