@@ -31,6 +31,20 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 ## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Database Configuration (Prisma 7 + Neon/Postgres)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This project uses Prisma 7 with the `client` engine architecture. To deploy on Vercel, you must configure the following environment variables:
+
+1.  **DATABASE_URL**: Your direct connection string (e.g., `postgresql://...`).
+2.  **ACCELERATE_URL**: (Preferred) Your Prisma Accelerate connection string (`prisma://...`). 
+    *   If provided, the app will use Accelerate for connection pooling and caching.
+    *   If missing, the app will fallback to the **Neon Driver Adapter** using the `DATABASE_URL`.
+
+#### Required Environment Variables in Vercel:
+| Variable | Value |
+|----------|-------|
+| `DATABASE_URL` | `postgresql://user:pass@host:port/db?sslmode=require` |
+| `ACCELERATE_URL` | `prisma://accelerate.prisma-data.net/?api_key=...` |
+
+#### Technical Note:
+In Prisma 7, the `engineType: "client"` requires either a driver adapter or an `accelerateUrl` to be passed to the `PrismaClient` constructor. Our implementation in `app/lib/prisma.ts` handles both cases automatically.

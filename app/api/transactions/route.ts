@@ -73,7 +73,7 @@ export async function POST(request: Request) {
 
         const amountNum = Number(amount);
 
-        const result = await prisma.$transaction(async (tx) => {
+        const result = await prisma.$transaction(async (tx: any) => {
             // Create the transaction
             const newTx = await tx.transaction.create({
                 data: {

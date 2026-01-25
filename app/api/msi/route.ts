@@ -77,7 +77,7 @@ export async function POST(request: Request) {
         const parsedStartDate = startDate ? new Date(startDate) : new Date();
 
         // Create MSI Plan and all child transactions in a transaction
-        const result = await prisma.$transaction(async (tx) => {
+        const result = await prisma.$transaction(async (tx: any) => {
             // 1. Create the MSI Plan
             const msiPlan = await tx.mSIPlan.create({
                 data: {
