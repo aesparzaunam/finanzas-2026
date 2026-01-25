@@ -20,16 +20,29 @@ export default function RecentTransactions() {
 
     useEffect(() => {
         fetch('/api/transactions')
-            .then(res => res.json())
-            .then(data => {
-                // Filter out MSI parent transactions and take first 5
-                const recent = data
-                    .filter((tx: Transaction) => !tx.isParent)
-                    .slice(0, 5);
-                setTransactions(recent);
+            .then(async res => {
+                if (res.ok) {
+                    const data = await res.json();
+                    if (Array.isArray(data)) {
+                        // Filter out MSI parent transactions and take first 5
+                        const recent = data
+                            .filter((tx: Transaction) => !tx.isParent)
+                            .slice(0, 5);
+                        setTransactions(recent);
+                    } else {
+                        console.error('Expected array of transactions, got:', data);
+                        setTransactions([]);
+                    }
+                } else if (res.status === 401) {
+                    console.log('Unauthorized fetch for transactions');
+                    setTransactions([]);
+                }
                 setLoading(false);
             })
-            .catch(() => setLoading(false));
+            .catch((err) => {
+                console.error('Fetch error:', err);
+                setLoading(false);
+            });
     }, []);
 
     const formatCurrency = (amount: number) =>
