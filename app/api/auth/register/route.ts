@@ -5,10 +5,14 @@ import bcrypt from 'bcryptjs';
 export async function POST(request: Request) {
     try {
         const { name, email, password } = await request.json();
+        console.log('[Register] Attempting to register user:', email);
 
         if (!email || !password) {
+            console.log('[Register] Missing credentials');
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
+
+        console.log('[Register] Checking existing user...');
 
         // Check if user exists
         const existingUser = await prisma.user.findUnique({

@@ -29,7 +29,7 @@ export default function RegisterPage() {
                 login(user);
             } else {
                 const data = await res.json();
-                setError(data.error || 'Registration failed');
+                setError(data.details || data.error || 'Registration failed');
             }
         } catch (err) {
             console.error(err);
