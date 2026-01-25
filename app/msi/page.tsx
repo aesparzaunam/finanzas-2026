@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import LayoutShell from '../components/dashboard/LayoutShell';
 import styles from '../components/dashboard/dashboard.module.css';
 import formStyles from '../components/accounts/accounts.module.css';
+import EditMSIModal from '../components/msi/EditMSIModal';
 
 interface Account {
     id: string;
@@ -20,6 +21,7 @@ interface MSIPlan {
     description: string;
     status: string;
     paidMonths: number;
+    categoryId?: string;
 }
 
 export default function MSIPage() {
@@ -86,6 +88,49 @@ export default function MSIPage() {
             alert('Error creating MSI');
         } finally {
             setSubmitting(false);
+        }
+    };
+
+    const [editingPlan, setEditingPlan] = useState<any>(null);
+
+    const handleDelete = async (id: string) => {
+        if (!confirm('¿Estás seguro de cancelar este plan MSI? Se borrarán todas las transacciones asociadas.')) return;
+
+        try {
+            const res = await fetch(`/api/msi?id=${id}`, {
+                method: 'DELETE'
+            });
+
+            if (res.ok) {
+                // Refresh
+                const plans = await fetch('/api/msi').then(r => r.json());
+                setMsiPlans(plans);
+            } else {
+                alert('Error al eliminar plan MSI');
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Error al eliminar plan MSI');
+        }
+    };
+
+    const handleUpdate = async (updatedPlan: any) => {
+        const res = await fetch('/api/msi', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id: updatedPlan.id,
+                description: updatedPlan.description,
+                categoryId: updatedPlan.categoryId
+            })
+        });
+
+        if (res.ok) {
+            // Refresh
+            const plans = await fetch('/api/msi').then(r => r.json());
+            setMsiPlans(plans);
+        } else {
+            throw new Error('Failed to update');
         }
     };
 
@@ -208,7 +253,27 @@ export default function MSIPage() {
                 <div className={styles.grid}>
                     {msiPlans.map((plan: MSIPlan) => (
                         <div key={plan.id} className={styles.card}>
-                            <div className={styles.cardTitle}>{plan.description || 'Compra MSI'}</div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                <div className={styles.cardTitle}>{plan.description || 'Compra MSI'}</div>
+                                <div className={formStyles.actions}>
+                                    <button
+                                        onClick={() => setEditingPlan(plan)}
+                                        className={formStyles.actionBtn}
+                                        style={{ color: 'var(--text-secondary)' }}
+                                        title="Editar"
+                                    >
+                                        ✏️
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(plan.id)}
+                                        className={formStyles.actionBtn}
+                                        style={{ color: 'var(--danger)' }}
+                                        title="Eliminar"
+                                    >
+                                        🗑️
+                                    </button>
+                                </div>
+                            </div>
                             <div className={styles.cardValue}>{formatCurrency(plan.totalAmount)}</div>
                             <div className={`${styles.flexBetween} ${styles.textSmSecondary}`}>
                                 <span>{plan.months} meses</span>
@@ -240,6 +305,16 @@ export default function MSIPage() {
                     ))}
                 </div>
             )}
+
+            {editingPlan && (
+                <EditMSIModal
+                    plan={editingPlan}
+                    categories={categories}
+                    onClose={() => setEditingPlan(null)}
+                    onSave={handleUpdate}
+                />
+            )}
+
         </LayoutShell>
     );
 }

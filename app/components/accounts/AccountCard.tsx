@@ -1,13 +1,16 @@
 import styles from './accounts.module.css';
 
 interface AccountProps {
+    id: string; // Added ID for actions
     name: string;
     type: string;
     balance: number;
     currency: string;
+    onEdit?: (account: any) => void;
+    onDelete?: (id: string) => void;
 }
 
-export default function AccountCard({ name, type, balance, currency }: AccountProps) {
+export default function AccountCard({ id, name, type, balance, currency, onEdit, onDelete }: AccountProps) {
     const formattedBalance = new Intl.NumberFormat('es-MX', {
         style: 'currency',
         currency: currency,
@@ -34,8 +37,34 @@ export default function AccountCard({ name, type, balance, currency }: AccountPr
         <div className={styles.card}>
             <div className={styles.header}>
                 <div className={styles.name}>{name}</div>
-                <div className={`${styles.type} ${typeClassMap[type] || ''}`}>
-                    {typeLabels[type] || type}
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <div className={`${styles.type} ${typeClassMap[type] || ''}`}>
+                        {typeLabels[type] || type}
+                    </div>
+                    {(onEdit || onDelete) && (
+                        <div className={styles.actions}>
+                            {onEdit && (
+                                <button
+                                    className={styles.actionBtn}
+                                    onClick={() => onEdit({ id, name, type, balance, currency })}
+                                    title="Editar cuenta"
+                                    style={{ color: 'var(--text-secondary)' }}
+                                >
+                                    ✏️
+                                </button>
+                            )}
+                            {onDelete && (
+                                <button
+                                    className={styles.actionBtn}
+                                    onClick={() => onDelete(id)}
+                                    title="Eliminar cuenta"
+                                    style={{ color: 'var(--danger)' }}
+                                >
+                                    🗑️
+                                </button>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
             <div className={styles.balance}>{formattedBalance}</div>

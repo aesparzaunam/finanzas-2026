@@ -19,9 +19,11 @@ interface BudgetProps {
         };
         period: string;
     };
+    onEdit?: (budget: any) => void;
+    onDelete?: (id: string) => void;
 }
 
-export default function BudgetCard({ budget }: BudgetProps) {
+export default function BudgetCard({ budget, onEdit, onDelete }: BudgetProps) {
     const { category, spent, remaining, percentage, totalAvailable, carryOverAmount, enableCarryOver } = budget;
 
     // Determine status class based on percentage
@@ -53,9 +55,27 @@ export default function BudgetCard({ budget }: BudgetProps) {
                         )}
                     </span>
                 </div>
-                <div className={styles.amount}>
-                    {formatCurrency(totalAvailable)}
+
+                <div className={styles.actions}>
+                    <button
+                        className={styles.actionBtn}
+                        onClick={() => onEdit && onEdit(budget)}
+                        title="Editar presupuesto"
+                    >
+                        ✏️
+                    </button>
+                    <button
+                        className={`${styles.actionBtn} ${styles.deleteBtn}`}
+                        onClick={() => onDelete && onDelete(budget.id)}
+                        title="Eliminar presupuesto"
+                    >
+                        🗑️
+                    </button>
                 </div>
+            </div>
+
+            <div className={styles.budgetAmount}>
+                {formatCurrency(totalAvailable)}
             </div>
 
             <div className={styles.progressContainer}>

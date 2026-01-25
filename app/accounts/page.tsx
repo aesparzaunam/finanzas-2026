@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import LayoutShell from '../components/dashboard/LayoutShell';
 import AccountCard from '../components/accounts/AccountCard';
+import EditAccountModal from '../components/accounts/EditAccountModal';
 import styles from '../components/accounts/accounts.module.css';
 import dashStyles from '../components/dashboard/dashboard.module.css';
 
@@ -41,6 +42,47 @@ export default function AccountsPage() {
             setLoading(false);
         }
     }
+
+    const [editingAccount, setEditingAccount] = useState<any>(null);
+
+    const handleDelete = async (id: string) => {
+        if (!confirm('¿Estás seguro de eliminar esta cuenta?')) return;
+
+        try {
+            const res = await fetch(`/api/accounts?id=${id}`, {
+                method: 'DELETE'
+            });
+
+            if (res.ok) {
+                fetchAccounts();
+            } else {
+                const data = await res.json();
+                alert(data.error || 'Error al eliminar cuenta');
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Error al eliminar cuenta');
+        }
+    };
+
+    const handleUpdate = async (updatedAccount: any) => {
+        const res = await fetch('/api/accounts', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id: updatedAccount.id,
+                name: updatedAccount.name,
+                type: updatedAccount.type,
+                balance: updatedAccount.balance
+            })
+        });
+
+        if (res.ok) {
+            fetchAccounts();
+        } else {
+            throw new Error('Failed to update');
+        }
+    };
 
     async function handleCreate(e: React.FormEvent) {
         e.preventDefault();
@@ -130,13 +172,24 @@ export default function AccountsPage() {
                     {accounts.map(acc => (
                         <AccountCard
                             key={acc.id}
+                            id={acc.id}
                             name={acc.name}
                             type={acc.type}
                             balance={Number(acc.balance)}
                             currency={acc.currency}
+                            onEdit={() => setEditingAccount(acc)}
+                            onDelete={() => handleDelete(acc.id)}
                         />
                     ))}
                 </div>
+            )}
+
+            {editingAccount && (
+                <EditAccountModal
+                    account={editingAccount}
+                    onClose={() => setEditingAccount(null)}
+                    onSave={handleUpdate}
+                />
             )}
         </LayoutShell>
     );

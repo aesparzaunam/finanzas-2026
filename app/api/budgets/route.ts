@@ -197,3 +197,79 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
+
+export async function PUT(request: Request) {
+    try {
+        const cookieStore = await cookies();
+        const userId = cookieStore.get('userId')?.value;
+
+        if (!userId) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const { id, amount, period, enableCarryOver } = await request.json();
+
+        if (!id) {
+            return NextResponse.json({ error: 'Budget ID is required' }, { status: 400 });
+        }
+
+        // Verify budget belongs to user
+        const existing = await prisma.budget.findFirst({
+            where: { id, userId }
+        });
+
+        if (!existing) {
+            return NextResponse.json({ error: 'Budget not found' }, { status: 404 });
+        }
+
+        const updatedBudget = await prisma.budget.update({
+            where: { id },
+            data: {
+                ...(amount !== undefined && { amount: Number(amount) }),
+                ...(period !== undefined && { period }),
+                ...(enableCarryOver !== undefined && { enableCarryOver })
+            }
+        });
+
+        return NextResponse.json(updatedBudget);
+    } catch (error) {
+        console.error('Failed to update budget:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    }
+}
+
+export async function DELETE(request: Request) {
+    try {
+        const cookieStore = await cookies();
+        const userId = cookieStore.get('userId')?.value;
+
+        if (!userId) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const { searchParams } = new URL(request.url);
+        const id = searchParams.get('id');
+
+        if (!id) {
+            return NextResponse.json({ error: 'Budget ID is required' }, { status: 400 });
+        }
+
+        // Verify budget belongs to user
+        const existing = await prisma.budget.findFirst({
+            where: { id, userId }
+        });
+
+        if (!existing) {
+            return NextResponse.json({ error: 'Budget not found' }, { status: 404 });
+        }
+
+        await prisma.budget.delete({
+            where: { id }
+        });
+
+        return NextResponse.json({ success: true });
+    } catch (error) {
+        console.error('Failed to delete budget:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    }
+}

@@ -146,3 +146,100 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
+
+export async function PUT(request: Request) {
+    try {
+        const cookieStore = await cookies();
+        const userId = cookieStore.get('userId')?.value;
+
+        if (!userId) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const { id, description, categoryId } = await request.json();
+
+        if (!id) {
+            return NextResponse.json({ error: 'MSI Plan ID is required' }, { status: 400 });
+        }
+
+        // Verify plan belongs to user
+        const existing = await prisma.mSIPlan.findFirst({
+            where: { id, userId }
+        });
+
+        if (!existing) {
+            return NextResponse.json({ error: 'MSI plan not found' }, { status: 404 });
+        }
+
+        const updatedPlan = await prisma.mSIPlan.update({
+            where: { id },
+            data: {
+                ...(description !== undefined && { description }),
+                ...(categoryId !== undefined && { categoryId })
+            }
+        });
+
+        // Also update the description in related transactions
+        if (description !== undefined) {
+            await prisma.transaction.updateMany({
+                where: { msiPlanId: id },
+                data: {
+                    description: prisma.sql`CONCAT(SUBSTRING(description, 1, POSITION(':' IN description)), ' ', ${description})`
+                }
+            });
+        }
+
+        return NextResponse.json(updatedPlan);
+    } catch (error) {
+        console.error('Failed to update MSI plan:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    }
+}
+
+export async function DELETE(request: Request) {
+    try {
+        const cookieStore = await cookies();
+        const userId = cookieStore.get('userId')?.value;
+
+        if (!userId) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const { searchParams } = new URL(request.url);
+        const id = searchParams.get('id');
+
+        if (!id) {
+            return NextResponse.json({ error: 'MSI Plan ID is required' }, { status: 400 });
+        }
+
+        // Verify plan belongs to user
+        const existing = await prisma.mSIPlan.findFirst({
+            where: { id, userId }
+        });
+
+        if (!existing) {
+            return NextResponse.json({ error: 'MSI plan not found' }, { status: 404 });
+        }
+
+        // Delete all related transactions and the plan in a transaction
+        await prisma.$transaction(async (tx: any) => {
+            // Delete child transactions first
+            await tx.transaction.deleteMany({
+                where: { msiPlanId: id }
+            });
+
+            // Then delete the MSI plan
+            await tx.mSIPlan.delete({
+                where: { id }
+            });
+        });
+
+        return NextResponse.json({
+            success: true,
+            message: 'MSI plan and all related transactions deleted'
+        });
+    } catch (error) {
+        console.error('Failed to delete MSI plan:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    }
+}
