@@ -17,8 +17,11 @@ export async function GET() {
 
         const txRef = db.collection('users').doc(userId).collection('transactions');
         for (const plan of msiPlans) {
-            const txSnap = await txRef.where('msiPlanId', '==', plan.id).orderBy('date', 'asc').get();
-            (plan as any).transactions = txSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+            const txSnap = await txRef.where('msiPlanId', '==', plan.id).get();
+            const txs = txSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+            // Sort in memory to avoid requiring a Firestore composite index (msiPlanId, date)
+            txs.sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
+            (plan as any).transactions = txs;
         }
 
         return NextResponse.json(msiPlans);

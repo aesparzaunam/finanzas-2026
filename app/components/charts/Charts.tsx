@@ -68,7 +68,7 @@ export default function Charts({ history }: ChartsProps) {
                     📊 Ingresos vs Gastos (Últimos 6 meses)
                 </h3>
                 <div className={styles.chartContainer}>
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                         <BarChart data={history} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                             <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />
                             <XAxis
@@ -112,7 +112,7 @@ export default function Charts({ history }: ChartsProps) {
                     📈 Evolución del Gasto Mensual (12 meses)
                 </h3>
                 <div className={styles.chartContainer}>
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                         <AreaChart data={historyWithNet} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                             <defs>
                                 <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">

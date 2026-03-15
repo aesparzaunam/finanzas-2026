@@ -34,10 +34,24 @@ export default function MSIPage() {
             fetch('/api/accounts').then(r => r.json()),
             fetch('/api/categories').then(r => r.json())
         ]).then(([plans, accs, cats]) => {
-            setMsiPlans(plans);
-            // Filter only credit card accounts
-            setAccounts(accs.filter((a: Account) => a.type === 'CREDIT'));
-            setCategories(cats.filter((c: { type: string }) => c.type === 'EXPENSE'));
+            if (Array.isArray(plans)) {
+                setMsiPlans(plans);
+            } else {
+                console.error('Error fetching MSI plans:', plans);
+            }
+
+            if (Array.isArray(accs)) {
+                setAccounts(accs.filter((a: Account) => a.type === 'CREDIT'));
+            } else {
+                console.error('Error fetching accounts:', accs);
+            }
+
+            if (Array.isArray(cats)) {
+                setCategories(cats.filter((c: { type: string }) => c.type === 'EXPENSE'));
+            } else {
+                console.error('Error fetching categories:', cats);
+            }
+            
             setLoading(false);
         });
     }, []);
