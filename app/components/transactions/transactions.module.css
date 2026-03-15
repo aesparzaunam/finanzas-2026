@@ -25,13 +25,14 @@
     background: var(--background-alt);
     border-radius: var(--radius-xl);
     border: 1px solid var(--border-light);
-    overflow: hidden;
+    overflow-x: auto; /* Allow horizontal scroll on mobile */
     box-shadow: var(--shadow-sm);
 }
 
 .table {
     width: 100%;
     border-collapse: collapse;
+    min-width: 650px; /* Ensure space for all concepts */
 }
 
 .table th,
@@ -43,11 +44,23 @@
 
 .table th {
     background: var(--background);
-    font-weight: var(--font-semibold);
-    color: var(--text-secondary);
-    font-size: var(--text-sm);
+    font-weight: 700;
+    color: var(--text-muted);
+    font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+}
+
+/* Base column widths to ensure visibility of concepts */
+.dateCell { min-width: 100px; color: var(--text-muted); font-size: var(--text-xs); }
+.descCell { min-width: 160px; font-weight: 700; color: var(--text-primary); }
+.categoryCell { min-width: 140px; }
+.accountCell { min-width: 120px; color: var(--text-secondary); }
+.amountCell { 
+    min-width: 120px; 
+    text-align: right; 
+    font-family: var(--font-mono);
+    font-weight: 800;
 }
 
 .table tr {
@@ -122,6 +135,11 @@
     display: inline-flex;
     align-items: center;
     gap: var(--space-2);
+    white-space: nowrap; /* Keep category on one line */
+    background: var(--background);
+    padding: 2px 8px;
+    border-radius: 6px;
+    border-left: 3px solid var(--category-color);
 }
 
 .modalContent {

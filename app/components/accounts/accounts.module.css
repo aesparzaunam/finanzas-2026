@@ -200,6 +200,20 @@
     opacity: 1;
 }
 
+.deleteBtn {
+    color: var(--danger);
+}
+
+.deleteBtn:hover {
+    background: var(--danger-light);
+    color: var(--danger-dark);
+}
+
+.typeContainer {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
 /* Modal Styles - Reuse structure */
 .modalOverlay {
     position: fixed;
@@ -212,6 +226,7 @@
     align-items: center;
     justify-content: center;
     z-index: 1000;
+    -webkit-backdrop-filter: blur(4px);
     backdrop-filter: blur(4px);
     animation: fadeIn 0.2s ease-out;
 }
@@ -314,4 +329,9 @@
         transform: translateY(0);
         opacity: 1;
     }
+}
+
+.loadingText {
+    text-align: center;
+    padding: 20px;
 }

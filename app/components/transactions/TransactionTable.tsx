@@ -29,30 +29,24 @@ export default function TransactionTable({ transactions }: { transactions: Trans
                     </tr>
                 </thead>
                 <tbody>
-                    {transactions.map(tx => (
-                        <tr key={tx.id}>
-                            <td>{new Date(tx.date).toLocaleDateString()}</td>
-                            <td>{tx.description}</td>
-                            <td>
-                                {(() => {
-                                    const style = { '--category-color': tx.category?.color || 'var(--text-secondary)' } as React.CSSProperties;
-                                    return (
-                                        // eslint-disable-next-line
-                                        <span
-                                            className={styles.categoryName}
-                                            style={style}
-                                        >
-                                            {tx.category?.icon} {tx.category?.name || 'Sin categoría'}
-                                        </span>
-                                    );
-                                })()}
-                            </td>
-                            <td>{tx.account?.name}</td>
-                            <td className={`${styles.amount} ${tx.type === 'INCOME' ? styles.income : (tx.type === 'TRANSFER' ? styles.transfer : styles.expense)}`}>
-                                {tx.type === 'INCOME' ? '+' : (tx.type === 'TRANSFER' ? '' : '-')}{formatCurrency(Number(tx.amount))}
-                            </td>
-                        </tr>
-                    ))}
+                    {transactions.map(tx => {
+                        const style = { '--category-color': tx.category?.color || 'var(--text-secondary)' } as React.CSSProperties;
+                        return (
+                            <tr key={tx.id}>
+                                <td className={styles.dateCell}>{new Date(tx.date).toLocaleDateString()}</td>
+                                <td className={styles.descCell}>{tx.description}</td>
+                                <td className={styles.categoryCell}>
+                                    <span className={styles.categoryName} style={style}>
+                                        {tx.category?.icon} {tx.category?.name || 'Sin categoría'}
+                                    </span>
+                                </td>
+                                <td className={styles.accountCell}>{tx.account?.name}</td>
+                                <td className={`${styles.amountCell} ${tx.type === 'INCOME' ? styles.income : (tx.type === 'TRANSFER' ? styles.transfer : styles.expense)}`}>
+                                    {tx.type === 'INCOME' ? '+' : (tx.type === 'TRANSFER' ? '' : '-')}{formatCurrency(Number(tx.amount))}
+                                </td>
+                            </tr>
+                        );
+                    })}
                     {transactions.length === 0 && (
                         <tr>
                             <td colSpan={5} className={styles.centeredCell}>No se encontraron transacciones</td>

@@ -91,17 +91,17 @@
 }
 
 /* Dark Mode */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0f172a;
-    --background-alt: #1e293b;
-    --foreground: #f8fafc;
-    --text-primary: #f8fafc;
-    --text-secondary: #94a3b8;
-    --text-muted: #64748b;
-    --border-light: #334155;
-    --border-default: #475569;
-  }
+.dark, [data-theme='dark'] {
+  --background: #0b0f19; /* Matching Image 1 */
+  --background-alt: #1a2233; /* Cards matching Image 1 */
+  --foreground: #ffffff;
+  --text-primary: #ffffff;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --border-light: #252f44;
+  --border-default: #334155;
+  --primary: #2563eb;
+  --primary-light: #2c3e66; /* Subdued blue background for dark cards */
 }
 
 /* ================================
@@ -119,8 +119,6 @@
 html {
   font-size: 16px;
   scroll-behavior: smooth;
-  -webkit-text-size-adjust: 100%;
-  text-size-adjust: 100%;
 }
 
 body {
@@ -132,6 +130,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
 /* Typography */

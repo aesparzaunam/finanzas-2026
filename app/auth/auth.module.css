@@ -15,6 +15,28 @@
     border-radius: 12px;
     border: 1px solid #e5e5e5;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.logoContainer {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 1.5rem;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #fdfdfd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.logoImg {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
 }
 
 .title {
@@ -82,4 +104,50 @@
     color: #ef4444;
     font-size: 0.875rem;
     text-align: center;
+}
+
+.divider {
+    text-align: center;
+    margin: 15px 0;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    position: relative;
+}
+
+.googleButton {
+    background-color: white;
+    color: #333;
+    border: 1px solid #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0.75rem;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.googleButton:hover {
+    background-color: #f9f9f9;
+}
+
+.googleWrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    text-align: center;
+}
+
+.googleSubtitle {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+.linkContainer {
+    text-align: center;
+    font-size: 0.875rem;
+    color: #666;
+    margin-top: 2rem;
 }

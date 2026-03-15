@@ -3,91 +3,75 @@
 import { useState } from 'react';
 import { useAuth } from '@/app/context/AuthProvider';
 import Link from 'next/link';
+import { auth, googleProvider, signInWithPopup } from '@/app/lib/firebase-client';
 import styles from '../auth.module.css';
 
 export default function RegisterPage() {
-    const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
     const { login } = useAuth();
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleGoogleLogin = async () => {
         setError('');
-
+        setLoading(true);
         try {
-            const res = await fetch('/api/auth/register', {
+            const result = await signInWithPopup(auth, googleProvider);
+            const user = result.user;
+
+            const res = await fetch('/api/auth/google', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, email, password }),
+                body: JSON.stringify({
+                    uid: user.uid,
+                    email: user.email,
+                    name: user.displayName,
+                    photoURL: user.photoURL,
+                }),
             });
 
             if (res.ok) {
-                const user = await res.json();
-                // Automatically login after register
-                login(user);
+                const userData = await res.json();
+                login(userData);
             } else {
                 const data = await res.json();
-                setError(data.details || data.error || 'Registration failed');
+                setError(data.error || 'Google registration failed');
             }
-        } catch (err) {
+        } catch (err: unknown) {
             console.error(err);
-            setError('An error occurred');
+            const authError = err as { code?: string, message?: string };
+            if (authError.code !== 'auth/popup-closed-by-user') {
+                setError(authError.message || 'Google Auth Error');
+            }
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
         <div className={styles.container}>
             <div className={styles.card}>
-                <h1 className={styles.title}>Create Account</h1>
-                <form onSubmit={handleSubmit} className={styles.form}>
+                <h1 className={styles.title}>Crear Cuenta</h1>
+
+                <div className={styles.googleWrapper}>
+                    <p className={styles.googleSubtitle}>
+                        Regístrate rápidamente con tu cuenta de Google.
+                    </p>
+
                     {error && <div className={styles.error} role="alert">{error}</div>}
-                    <div className={styles.inputGroup}>
-                        <label htmlFor="name" className={styles.label}>Name</label>
-                        <input
-                            id="name"
-                            className={styles.input}
-                            type="text"
-                            placeholder="Your Name"
-                            title="Full Name"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <div className={styles.inputGroup}>
-                        <label htmlFor="email" className={styles.label}>Email</label>
-                        <input
-                            id="email"
-                            className={styles.input}
-                            type="email"
-                            placeholder="email@example.com"
-                            title="Email Address"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <div className={styles.inputGroup}>
-                        <label htmlFor="password" className={styles.label}>Password</label>
-                        <input
-                            id="password"
-                            className={styles.input}
-                            type="password"
-                            placeholder="••••••"
-                            title="Password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <button type="submit" className={styles.button}>
-                        Sign Up
+
+                    <button
+                        type="button"
+                        className={styles.googleButton}
+                        onClick={handleGoogleLogin}
+                        disabled={loading}
+                        aria-label="Registrarse con Google"
+                    >
+                        {loading ? 'Conectando...' : 'Registrarse con Google 🚀'}
                     </button>
-                </form>
-                <p className={styles.link}>
-                    Already have an account? <Link href="/auth/login">Login</Link>
+                </div>
+
+                <p className={styles.linkContainer}>
+                    ¿Ya tienes una cuenta? <Link href="/auth/login">Inicia Sesión</Link>
                 </p>
             </div>
         </div>

@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/app/lib/prisma';
+import { db } from '@/app/lib/firebase';
 import { cookies } from 'next/headers';
 
-// GET: List all MSI plans for the user
 export async function GET() {
     try {
         const cookieStore = await cookies();
@@ -12,15 +11,15 @@ export async function GET() {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const msiPlans = await prisma.mSIPlan.findMany({
-            where: { userId },
-            include: {
-                transactions: {
-                    orderBy: { date: 'asc' }
-                }
-            },
-            orderBy: { createdAt: 'desc' }
-        });
+        const msiPlansRef = db.collection('users').doc(userId).collection('msiPlans');
+        const snapshot = await msiPlansRef.orderBy('createdAt', 'desc').get();
+        const msiPlans = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        const txRef = db.collection('users').doc(userId).collection('transactions');
+        for (const plan of msiPlans) {
+            const txSnap = await txRef.where('msiPlanId', '==', plan.id).orderBy('date', 'asc').get();
+            (plan as any).transactions = txSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        }
 
         return NextResponse.json(msiPlans);
     } catch (error) {
@@ -29,8 +28,6 @@ export async function GET() {
     }
 }
 
-// POST: Create a new MSI purchase
-// This creates the MSIPlan and expands it into monthly child transactions
 export async function POST(request: Request) {
     try {
         const cookieStore = await cookies();
@@ -49,7 +46,6 @@ export async function POST(request: Request) {
             startDate
         } = await request.json();
 
-        // Validation
         if (!totalAmount || !months || !accountId) {
             return NextResponse.json({ error: 'Missing required fields: totalAmount, months, accountId' }, { status: 400 });
         }
@@ -59,85 +55,87 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Invalid MSI months. Must be 3, 6, 9, 12, 18, or 24' }, { status: 400 });
         }
 
-        // Verify account belongs to user and is a credit card
-        const account = await prisma.account.findFirst({
-            where: { id: accountId, userId }
-        });
+        const accountRef = db.collection('users').doc(userId).collection('accounts').doc(accountId);
+        const accountDoc = await accountRef.get();
 
-        if (!account) {
+        if (!accountDoc.exists) {
             return NextResponse.json({ error: 'Account not found' }, { status: 404 });
         }
 
-        if (account.type !== 'CREDIT') {
+        const accountD = accountDoc.data();
+        if (accountD?.type !== 'CREDIT') {
             return NextResponse.json({ error: 'MSI only available for credit card accounts' }, { status: 400 });
         }
 
         const total = Number(totalAmount);
-        const monthlyAmount = Math.round((total / months) * 100) / 100; // Round to 2 decimals
+        const monthlyAmount = Math.round((total / months) * 100) / 100;
         const parsedStartDate = startDate ? new Date(startDate) : new Date();
 
-        // Create MSI Plan and all child transactions in a transaction
-        const result = await prisma.$transaction(async (tx: any) => {
-            // 1. Create the MSI Plan
-            const msiPlan = await tx.mSIPlan.create({
-                data: {
-                    userId,
-                    totalAmount: total,
-                    months,
-                    monthlyAmount,
-                    startDate: parsedStartDate,
-                    description,
-                    accountId,
-                    categoryId,
-                    status: 'ACTIVE',
-                    paidMonths: 0
-                }
-            });
+        const userRef = db.collection('users').doc(userId);
+        const msiPlanRef = userRef.collection('msiPlans').doc();
+        const parentTxRef = userRef.collection('transactions').doc();
 
-            // 2. Create the parent transaction (the original purchase - does NOT count as expense)
-            const parentTransaction = await tx.transaction.create({
-                data: {
-                    userId,
-                    accountId,
-                    categoryId,
-                    amount: total,
-                    type: 'EXPENSE', // The total purchase
-                    date: parsedStartDate,
-                    description: `[MSI ${months}M] ${description || 'Compra a meses'}`,
-                    msiPlanId: msiPlan.id,
-                    isParent: true // Mark as parent - should be excluded from expense calculations
-                }
-            });
+        await db.runTransaction(async (transaction) => {
+            const msiData = {
+                id: msiPlanRef.id,
+                userId,
+                totalAmount: total,
+                months: Number(months),
+                monthlyAmount,
+                startDate: parsedStartDate.toISOString(),
+                description: description || '',
+                accountId,
+                categoryId: categoryId || null,
+                status: 'ACTIVE',
+                paidMonths: 0,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+            transaction.set(msiPlanRef, msiData);
 
-            // 3. Create child transactions for each month
-            const childTransactions = [];
+            const parentTxData = {
+                id: parentTxRef.id,
+                userId,
+                accountId,
+                categoryId: categoryId || null,
+                amount: total,
+                type: 'EXPENSE',
+                date: parsedStartDate.toISOString(),
+                description: `[MSI ${months}M] ${description || 'Compra a meses'}`,
+                msiPlanId: msiPlanRef.id,
+                isParent: true,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+            transaction.set(parentTxRef, parentTxData);
+
             for (let i = 0; i < months; i++) {
                 const chargeDate = new Date(parsedStartDate);
                 chargeDate.setMonth(chargeDate.getMonth() + i);
 
-                const child = await tx.transaction.create({
-                    data: {
-                        userId,
-                        accountId,
-                        categoryId,
-                        amount: monthlyAmount,
-                        type: 'MSI_CHARGE', // Monthly MSI charge - counts as expense
-                        date: chargeDate,
-                        description: `MSI ${i + 1}/${months}: ${description || 'Cargo mensual'}`,
-                        msiPlanId: msiPlan.id,
-                        isParent: false,
-                        parentId: parentTransaction.id
-                    }
-                });
-                childTransactions.push(child);
+                const childRef = userRef.collection('transactions').doc();
+                const childData = {
+                    id: childRef.id,
+                    userId,
+                    accountId,
+                    categoryId: categoryId || null,
+                    amount: monthlyAmount,
+                    type: 'MSI_CHARGE',
+                    date: chargeDate.toISOString(),
+                    description: `MSI ${i + 1}/${months}: ${description || 'Cargo mensual'}`,
+                    msiPlanId: msiPlanRef.id,
+                    isParent: false,
+                    parentId: parentTxRef.id,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+                transaction.set(childRef, childData);
             }
-
-            return { msiPlan, parentTransaction, childTransactions };
         });
 
         return NextResponse.json({
             success: true,
-            msiPlan: result.msiPlan,
+            msiPlan: { id: msiPlanRef.id },
             message: `Created MSI plan with ${months} monthly charges of $${monthlyAmount.toFixed(2)}`
         }, { status: 201 });
 
@@ -162,34 +160,41 @@ export async function PUT(request: Request) {
             return NextResponse.json({ error: 'MSI Plan ID is required' }, { status: 400 });
         }
 
-        // Verify plan belongs to user
-        const existing = await prisma.mSIPlan.findFirst({
-            where: { id, userId }
-        });
+        const msiPlanRef = db.collection('users').doc(userId).collection('msiPlans').doc(id);
+        const doc = await msiPlanRef.get();
 
-        if (!existing) {
+        if (!doc.exists) {
             return NextResponse.json({ error: 'MSI plan not found' }, { status: 404 });
         }
 
-        const updatedPlan = await prisma.mSIPlan.update({
-            where: { id },
-            data: {
-                ...(description !== undefined && { description }),
-                ...(categoryId !== undefined && { categoryId })
+        const updateData: any = {
+            updatedAt: new Date().toISOString()
+        };
+        if (description !== undefined) updateData.description = description;
+        if (categoryId !== undefined) updateData.categoryId = categoryId;
+
+        await db.runTransaction(async (transaction) => {
+            transaction.update(msiPlanRef, updateData);
+
+            if (description !== undefined) {
+                const txSnap = await db.collection('users').doc(userId).collection('transactions')
+                    .where('msiPlanId', '==', id)
+                    .get();
+
+                txSnap.docs.forEach(txDoc => {
+                    const txData = txDoc.data();
+                    let newDesc = txData.description;
+                    if (txData.isParent) {
+                        newDesc = `[MSI ${txData.description.split(']')[0].split('MSI ')[1]}M] ${description}`;
+                    } else {
+                        newDesc = `MSI ${txData.description.split(':')[0].split('MSI ')[1]}: ${description}`;
+                    }
+                    transaction.update(txDoc.ref, { description: newDesc, updatedAt: new Date().toISOString() });
+                });
             }
         });
 
-        // Also update the description in related transactions
-        if (description !== undefined) {
-            await prisma.transaction.updateMany({
-                where: { msiPlanId: id },
-                data: {
-                    description: prisma.sql`CONCAT(SUBSTRING(description, 1, POSITION(':' IN description)), ' ', ${description})`
-                }
-            });
-        }
-
-        return NextResponse.json(updatedPlan);
+        return NextResponse.json({ id, ...doc.data(), ...updateData });
     } catch (error) {
         console.error('Failed to update MSI plan:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
@@ -212,26 +217,25 @@ export async function DELETE(request: Request) {
             return NextResponse.json({ error: 'MSI Plan ID is required' }, { status: 400 });
         }
 
-        // Verify plan belongs to user
-        const existing = await prisma.mSIPlan.findFirst({
-            where: { id, userId }
-        });
+        const msiPlanRef = db.collection('users').doc(userId).collection('msiPlans').doc(id);
+        const doc = await msiPlanRef.get();
 
-        if (!existing) {
+        if (!doc.exists) {
             return NextResponse.json({ error: 'MSI plan not found' }, { status: 404 });
         }
 
-        // Delete all related transactions and the plan in a transaction
-        await prisma.$transaction(async (tx: any) => {
-            // Delete child transactions first
-            await tx.transaction.deleteMany({
-                where: { msiPlanId: id }
+        await db.runTransaction(async (transaction) => {
+            // Find and delete all related transactions
+            const txSnap = await db.collection('users').doc(userId).collection('transactions')
+                .where('msiPlanId', '==', id)
+                .get();
+
+            txSnap.docs.forEach(txDoc => {
+                transaction.delete(txDoc.ref);
             });
 
-            // Then delete the MSI plan
-            await tx.mSIPlan.delete({
-                where: { id }
-            });
+            // Delete the plan
+            transaction.delete(msiPlanRef);
         });
 
         return NextResponse.json({

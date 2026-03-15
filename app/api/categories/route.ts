@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/app/lib/prisma';
-import { cookies } from 'next/headers';
+import { db } from '@/app/lib/firebase';
+import { getUserId, unauthorizedResponse, internalErrorResponse } from '@/app/lib/api-utils';
+import { Category } from '@/app/lib/types';
 
 const DEFAULT_CATEGORIES = [
     { name: 'Salary', type: 'INCOME', icon: '💰', color: '#10b981' },
@@ -15,37 +16,36 @@ const DEFAULT_CATEGORIES = [
 
 export async function GET() {
     try {
-        const cookieStore = await cookies();
-        const userId = cookieStore.get('userId')?.value;
+        const userId = await getUserId();
+        if (!userId) return unauthorizedResponse();
 
-        if (!userId) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+        const categoriesRef = db.collection('users').doc(userId).collection('categories');
+        const snapshot = await categoriesRef.orderBy('name', 'asc').get();
 
-        let categories = await prisma.category.findMany({
-            where: { userId },
-            orderBy: { name: 'asc' },
-        });
+        let categories = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
         if (categories.length === 0) {
             // Seed default categories
-            await prisma.category.createMany({
-                data: DEFAULT_CATEGORIES.map(c => ({
-                    ...c,
+            const batch = db.batch();
+            for (const cat of DEFAULT_CATEGORIES) {
+                const newCatRef = categoriesRef.doc();
+                const catData: Category = {
+                    ...cat,
+                    id: newCatRef.id,
                     userId,
-                    type: c.type as any
-                }))
-            });
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                } as Category;
+                batch.set(newCatRef, catData);
+            }
+            await batch.commit();
 
-            categories = await prisma.category.findMany({
-                where: { userId },
-                orderBy: { name: 'asc' },
-            });
+            const refreshedSnapshot = await categoriesRef.orderBy('name', 'asc').get();
+            categories = refreshedSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
         }
 
         return NextResponse.json(categories);
     } catch (error) {
-        console.error('Failed to fetch categories:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return internalErrorResponse('GET Categories', error);
     }
 }

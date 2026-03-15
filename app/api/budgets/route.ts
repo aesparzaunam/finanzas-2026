@@ -1,30 +1,10 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/app/lib/prisma';
+import { db } from '@/app/lib/firebase';
 import { cookies } from 'next/headers';
 
-interface BudgetRecord {
-    id: string;
-    userId: string;
-    categoryId: string | null;
-    amount: { toNumber?: () => number } | number;
-    period: string;
-    enableCarryOver: boolean;
-    carryOverAmount: { toNumber?: () => number } | number;
-    lastCarryOverAt: Date | null;
-    category: { name: string; icon: string | null; color: string | null } | null;
-}
-
-interface TransactionRecord {
-    type: string;
-    isParent: boolean;
-    amount: { toNumber?: () => number } | number;
-}
-
-// Helper to get number from Decimal
-function toNumber(val: { toNumber?: () => number } | number): number {
-    if (typeof val === 'number') return val;
-    if (val && typeof val.toNumber === 'function') return val.toNumber();
-    return Number(val);
+// Helper to get number from string
+function toNumber(val: string | number): number {
+    return Number(val) || 0;
 }
 
 export async function GET() {
@@ -36,63 +16,67 @@ export async function GET() {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const budgets = await prisma.budget.findMany({
-            where: { userId },
-            include: {
-                category: { select: { name: true, icon: true, color: true } }
+        const budgetsRef = db.collection('users').doc(userId).collection('budgets');
+        const budgetSnap = await budgetsRef.get();
+        const budgets = budgetSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        const catRef = db.collection('users').doc(userId).collection('categories');
+        const catSnap = await catRef.get();
+        const categories = new Map(catSnap.docs.map(doc => [doc.id, doc.data()]));
+
+        // Attach category metadata
+        budgets.forEach((b: any) => {
+            if (b.categoryId && categories.has(b.categoryId)) {
+                b.category = categories.get(b.categoryId);
             }
         });
 
         const now = new Date();
 
         // Calculate spent and carry-over for each budget
-        const budgetsWithStatus = await Promise.all(budgets.map(async (budget: BudgetRecord) => {
-            let startDate, endDate, prevStartDate, prevEndDate;
+        const budgetsWithStatus = await Promise.all(budgets.map(async (budget: any) => {
+            let startDate: Date, endDate: Date, prevStartDate: Date, prevEndDate: Date;
 
             if (budget.period === 'MONTHLY') {
-                // Current month
                 startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-                endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-                // Previous month
+                endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
                 prevStartDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-                prevEndDate = new Date(now.getFullYear(), now.getMonth(), 0);
+                prevEndDate = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
             } else {
-                // Current year
                 startDate = new Date(now.getFullYear(), 0, 1);
-                endDate = new Date(now.getFullYear(), 11, 31);
-                // Previous year
+                endDate = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
                 prevStartDate = new Date(now.getFullYear() - 1, 0, 1);
-                prevEndDate = new Date(now.getFullYear() - 1, 11, 31);
+                prevEndDate = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59);
             }
 
-            // Calculate carry-over from previous period (if enabled and not yet calculated this period)
             let carryOver = toNumber(budget.carryOverAmount);
             const budgetLimit = toNumber(budget.amount);
 
-            // Check if we need to recalculate carry-over
             const periodStart = budget.period === 'MONTHLY'
                 ? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
                 : `${now.getFullYear()}`;
 
-            const lastCalc = budget.lastCarryOverAt
+            let lastCalcDateStr = budget.lastCarryOverAt;
+            const lastCalcDate = lastCalcDateStr ? new Date(lastCalcDateStr) : null;
+            const lastCalc = lastCalcDate
                 ? (budget.period === 'MONTHLY'
-                    ? `${budget.lastCarryOverAt.getFullYear()}-${String(budget.lastCarryOverAt.getMonth() + 1).padStart(2, '0')}`
-                    : `${budget.lastCarryOverAt.getFullYear()}`)
+                    ? `${lastCalcDate.getFullYear()}-${String(lastCalcDate.getMonth() + 1).padStart(2, '0')}`
+                    : `${lastCalcDate.getFullYear()}`)
                 : null;
 
+            const transactionsRef = db.collection('users').doc(userId).collection('transactions')
+                .where('categoryId', '==', budget.categoryId)
+                .where('type', 'in', ['EXPENSE', 'MSI_CHARGE']);
+
             if (budget.enableCarryOver && lastCalc !== periodStart) {
-                // Calculate previous period's remaining budget
-                const prevTransactions = await prisma.transaction.findMany({
-                    where: {
-                        userId,
-                        categoryId: budget.categoryId,
-                        type: { in: ['EXPENSE', 'MSI_CHARGE'] },
-                        date: { gte: prevStartDate, lte: prevEndDate }
-                    }
-                });
+                const prevSnap = await transactionsRef
+                    .where('date', '>=', prevStartDate.toISOString())
+                    .where('date', '<=', prevEndDate.toISOString())
+                    .get();
 
                 let prevSpent = 0;
-                prevTransactions.forEach((tx: TransactionRecord) => {
+                prevSnap.docs.forEach((doc) => {
+                    const tx = doc.data();
                     if (tx.type === 'EXPENSE' && !tx.isParent) {
                         prevSpent += toNumber(tx.amount);
                     } else if (tx.type === 'MSI_CHARGE') {
@@ -100,32 +84,23 @@ export async function GET() {
                     }
                 });
 
-                // Carry-over = previous limit + previous carry-over - previous spent
                 const prevAvailable = budgetLimit + carryOver - prevSpent;
-                carryOver = Math.max(0, prevAvailable); // Don't carry negative
+                carryOver = Math.max(0, prevAvailable);
 
-                // Update the budget with new carry-over
-                await prisma.budget.update({
-                    where: { id: budget.id },
-                    data: {
-                        carryOverAmount: carryOver,
-                        lastCarryOverAt: new Date()
-                    }
+                await budgetsRef.doc(budget.id).update({
+                    carryOverAmount: carryOver,
+                    lastCarryOverAt: new Date().toISOString()
                 });
             }
 
-            // Get current period's spending
-            const transactions = await prisma.transaction.findMany({
-                where: {
-                    userId,
-                    categoryId: budget.categoryId,
-                    type: { in: ['EXPENSE', 'MSI_CHARGE'] },
-                    date: { gte: startDate, lte: endDate }
-                }
-            });
+            const currSnap = await transactionsRef
+                .where('date', '>=', startDate.toISOString())
+                .where('date', '<=', endDate.toISOString())
+                .get();
 
             let spent = 0;
-            transactions.forEach((tx: TransactionRecord) => {
+            currSnap.docs.forEach((doc) => {
+                const tx = doc.data();
                 if (tx.type === 'EXPENSE' && !tx.isParent) {
                     spent += toNumber(tx.amount);
                 } else if (tx.type === 'MSI_CHARGE') {
@@ -133,7 +108,6 @@ export async function GET() {
                 }
             });
 
-            // Total available = base limit + carry-over
             const totalAvailable = budgetLimit + carryOver;
             const remaining = totalAvailable - spent;
             const percentage = (spent / totalAvailable) * 100;
@@ -171,27 +145,30 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
-        // Check if budget already exists for this category
-        const existing = await prisma.budget.findFirst({
-            where: { userId, categoryId }
-        });
+        const budgetsRef = db.collection('users').doc(userId).collection('budgets');
+        const existingSnap = await budgetsRef.where('categoryId', '==', categoryId).get();
 
-        if (existing) {
+        if (!existingSnap.empty) {
             return NextResponse.json({ error: 'Budget already exists for this category' }, { status: 400 });
         }
 
-        const budget = await prisma.budget.create({
-            data: {
-                userId,
-                categoryId,
-                amount: Number(amount),
-                period: period || 'MONTHLY',
-                enableCarryOver: enableCarryOver !== false, // Default true
-                carryOverAmount: 0
-            }
-        });
+        const newBudgetRef = budgetsRef.doc();
+        const budgetData = {
+            id: newBudgetRef.id,
+            userId,
+            categoryId,
+            amount: Number(amount),
+            period: period || 'MONTHLY',
+            enableCarryOver: enableCarryOver !== false,
+            carryOverAmount: 0,
+            lastCarryOverAt: null,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
 
-        return NextResponse.json(budget, { status: 201 });
+        await newBudgetRef.set(budgetData);
+
+        return NextResponse.json(budgetData, { status: 201 });
     } catch (error) {
         console.error('Failed to create budget:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
@@ -213,25 +190,23 @@ export async function PUT(request: Request) {
             return NextResponse.json({ error: 'Budget ID is required' }, { status: 400 });
         }
 
-        // Verify budget belongs to user
-        const existing = await prisma.budget.findFirst({
-            where: { id, userId }
-        });
+        const budgetRef = db.collection('users').doc(userId).collection('budgets').doc(id);
+        const doc = await budgetRef.get();
 
-        if (!existing) {
+        if (!doc.exists) {
             return NextResponse.json({ error: 'Budget not found' }, { status: 404 });
         }
 
-        const updatedBudget = await prisma.budget.update({
-            where: { id },
-            data: {
-                ...(amount !== undefined && { amount: Number(amount) }),
-                ...(period !== undefined && { period }),
-                ...(enableCarryOver !== undefined && { enableCarryOver })
-            }
-        });
+        const updateData: any = {
+            updatedAt: new Date().toISOString()
+        };
+        if (amount !== undefined) updateData.amount = Number(amount);
+        if (period !== undefined) updateData.period = period;
+        if (enableCarryOver !== undefined) updateData.enableCarryOver = enableCarryOver;
 
-        return NextResponse.json(updatedBudget);
+        await budgetRef.update(updateData);
+
+        return NextResponse.json({ id, ...doc.data(), ...updateData });
     } catch (error) {
         console.error('Failed to update budget:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
@@ -254,18 +229,14 @@ export async function DELETE(request: Request) {
             return NextResponse.json({ error: 'Budget ID is required' }, { status: 400 });
         }
 
-        // Verify budget belongs to user
-        const existing = await prisma.budget.findFirst({
-            where: { id, userId }
-        });
+        const budgetRef = db.collection('users').doc(userId).collection('budgets').doc(id);
+        const doc = await budgetRef.get();
 
-        if (!existing) {
+        if (!doc.exists) {
             return NextResponse.json({ error: 'Budget not found' }, { status: 404 });
         }
 
-        await prisma.budget.delete({
-            where: { id }
-        });
+        await budgetRef.delete();
 
         return NextResponse.json({ success: true });
     } catch (error) {

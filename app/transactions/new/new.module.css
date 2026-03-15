@@ -1,0 +1,147 @@
+.formContainer {
+    padding: 24px 20px;
+    padding-bottom: 120px;
+}
+
+.pageTitle {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 24px;
+}
+
+.formBox {
+    background: var(--background-alt);
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.typeSelector {
+    display: flex;
+    gap: 8px;
+    background: var(--background);
+    padding: 6px;
+    border-radius: 12px;
+    border: 1px solid var(--border-light);
+}
+
+.typeBtn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    background: transparent;
+    border: none;
+    padding: 10px 4px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+}
+
+.typeBtn.active {
+    background: var(--background-alt);
+    color: var(--text-primary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+    .typeBtn.active {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    }
+}
+
+.typeBtn.active.blue { color: var(--primary); background: rgba(37, 99, 235, 0.15); border: 1px solid rgba(37, 99, 235, 0.3); } 
+.typeBtn.active.green { color: #10b981; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); }
+.typeBtn.active.orange { color: #f97316; background: rgba(249, 115, 22, 0.15); border: 1px solid rgba(249, 115, 22, 0.3); }
+
+.typeIcon {
+    font-size: 16px;
+}
+
+.helpText {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: -12px;
+}
+
+.inputGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.input, .select {
+    background: var(--background);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    padding: 14px 16px;
+    color: var(--text-primary);
+    font-size: 15px;
+    font-family: inherit;
+    transition: all 0.2s;
+}
+
+.input:focus, .select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+.buttonGroup {
+    display: flex;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.btnPrimary, .btnSecondary {
+    flex: 1;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btnPrimary {
+    background: var(--primary);
+    color: white;
+    border: none;
+}
+
+.btnPrimary:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.btnSecondary {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-light);
+}
+
+.btnSecondary:hover {
+    color: var(--text-primary);
+    background: var(--border-light);
+}
+
+.formBody {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}

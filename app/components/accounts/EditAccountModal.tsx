@@ -13,18 +13,27 @@ export default function EditAccountModal({ account, onClose, onSave }: EditAccou
     const [name, setName] = useState(account.name);
     const [type, setType] = useState(account.type);
     const [balance, setBalance] = useState(account.balance);
+    const [billingDay, setBillingDay] = useState(account.billingDay || 1);
+    const [paymentDay, setPaymentDay] = useState(account.paymentDay || 15);
     const [saving, setSaving] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSaving(true);
         try {
-            await onSave({
+            const updatedAccount: any = {
                 ...account,
                 name,
                 type,
-                balance
-            });
+                balance: Number(balance)
+            };
+            
+            if (type === 'CREDIT') {
+                updatedAccount.billingDay = Number(billingDay);
+                updatedAccount.paymentDay = Number(paymentDay);
+            }
+
+            await onSave(updatedAccount);
             onClose();
         } catch (error) {
             console.error(error);
@@ -33,6 +42,8 @@ export default function EditAccountModal({ account, onClose, onSave }: EditAccou
             setSaving(false);
         }
     };
+
+    const dayOptions = Array.from({ length: 31 }, (_, i) => i + 1);
 
     return (
         <div className={styles.modalOverlay}>
@@ -77,6 +88,37 @@ export default function EditAccountModal({ account, onClose, onSave }: EditAccou
                                 required
                             />
                         </div>
+
+                        {type === 'CREDIT' && (
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div className={styles.inputGroup}>
+                                    <label className={styles.label}>Día de Corte</label>
+                                    <select
+                                        className={styles.select}
+                                        value={billingDay}
+                                        onChange={(e) => setBillingDay(e.target.value)}
+                                        title="Día de Corte"
+                                    >
+                                        {dayOptions.map(day => (
+                                            <option key={day} value={day}>{day}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className={styles.inputGroup}>
+                                    <label className={styles.label}>Día de Pago</label>
+                                    <select
+                                        className={styles.select}
+                                        value={paymentDay}
+                                        onChange={(e) => setPaymentDay(e.target.value)}
+                                        title="Día de Pago"
+                                    >
+                                        {dayOptions.map(day => (
+                                            <option key={day} value={day}>{day}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     <div className={styles.modalActions}>

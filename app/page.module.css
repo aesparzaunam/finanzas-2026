@@ -1,18 +1,456 @@
-.page {
-  display: flex;
-  min-height: 100vh;
-  flex-direction: column;
-  padding: 2rem;
-  font-family: var(--font-geist-sans);
+.pageContainer {
+    padding: 24px 20px;
+    padding-bottom: 100px; /* space for fab */
 }
 
-.main {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+/* User Header */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
 }
 
-.description {
-  margin-bottom: 2rem;
-  color: #666;
+@media (min-width: 768px) {
+    .header {
+        display: none;
+    }
+}
+
+.userInfo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.avatar {
+    width: 48px;
+    height: 48px;
+    background: var(--primary);
+    color: white;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 700;
+    overflow: hidden; /* Ensure image doesn't bleed out */
+}
+
+.avatarImg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.welcomeText {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+}
+
+.userName {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.headerBtn {
+    min-width: 54px;
+    height: 54px;
+    padding: 2px 4px;
+    border-radius: 12px;
+    background: var(--background-alt);
+    border: 1px solid var(--border-light);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btnLabel {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Blue Balance Card */
+.balanceCard {
+    background: var(--primary);
+    border-radius: 16px;
+    padding: 24px;
+    color: white;
+    margin-bottom: 24px;
+    box-shadow: 0 10px 30px rgba(37, 99, 235, 0.3);
+}
+
+.balanceLabel {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 8px;
+}
+
+.balanceValue {
+    font-size: 36px;
+    font-weight: 800;
+    margin-bottom: 20px;
+    letter-spacing: -1px;
+}
+
+.jointAccounts {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.accountIcons {
+    display: flex;
+    gap: 4px;
+    font-size: 16px;
+}
+
+.jointText {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Activity Analysis Chart */
+.sectionBlock {
+    background: var(--background-alt);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    border: 1px solid var(--border-light);
+}
+
+.sectionHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.sectionTitle {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.filterContainer {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.rangeSelect {
+    appearance: none;
+    background: var(--background);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    padding: 6px 30px 6px 12px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s;
+    outline: none;
+    letter-spacing: 0.5px;
+}
+
+.rangeSelect:hover {
+    border-color: var(--primary);
+    background: var(--border-light);
+}
+
+.selectIcon {
+    position: absolute;
+    right: 10px;
+    pointer-events: none;
+    color: var(--text-muted);
+}
+
+.chartBars {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    height: 120px;
+    margin-bottom: 16px;
+    padding: 0 10px;
+}
+
+.barCol {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 32px;
+}
+
+.bar {
+    width: 100%;
+    background: var(--border-light);
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+}
+
+.barFill {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--primary);
+    border-radius: 4px;
+    height: var(--bar-height, 0%);
+}
+
+.barLabel {
+    font-size: 10px;
+    color: var(--text-muted);
+}
+
+.emptyChart {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    color: var(--text-muted);
+    font-style: italic;
+    background: rgba(0,0,0,0.02);
+    border-radius: 12px;
+}
+
+.incomeExpenseScores {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.scoreItem {
+    background: var(--background);
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid var(--border-light);
+}
+
+.scoreLabel {
+    font-size: 10px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.scoreValue {
+    font-size: 16px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+
+.dotIncome { background: var(--success); }
+.dotExpense { background: var(--danger); }
+.valIncome { color: var(--success); }
+.valExpense { color: var(--danger); }
+
+/* Quick Actions */
+.quickActions {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 32px;
+    padding: 0 10px;
+}
+
+.actionBtn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+.actionIconBox {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: var(--background-alt);
+    border: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-primary);
+    transition: all 0.2s;
+}
+
+.actionBtn:hover .actionIconBox {
+    background: var(--border-light);
+    transform: translateY(-2px);
+}
+
+.actionIconBox.blue { color: var(--primary); }
+.actionIconBox.orange { color: #f97316; }
+.actionIconBox.green { color: #10b981; }
+.actionIconBox.purple { color: #8b5cf6; }
+
+.actionLabel {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Recent Transactions */
+.recentHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.viewAll {
+    font-size: 12px;
+    color: var(--primary);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.transactionList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.transactionItem {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    background: var(--background-alt);
+    border-radius: 16px;
+    border: 1px solid var(--border-light);
+}
+
+.txIcon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--tx-bg, var(--background));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 16px;
+    font-size: 18px;
+}
+
+.txDetails {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.txName {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.txMeta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.metaAccount {
+    font-weight: 600;
+}
+
+.metaDivider {
+    opacity: 0.5;
+}
+
+.txBadges {
+    display: flex;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.badge {
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 9px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.badge_INCOME { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+.badge_EXPENSE { background: var(--border-light); color: var(--text-secondary); }
+.badge_MSI_CHARGE { background: rgba(249, 115, 22, 0.1); color: #f97316; }
+.badge_TRANSFER { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+.badge_PAGO_TARJETA { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; }
+
+.badgeMSI {
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 9px;
+    font-weight: 700;
+    background: var(--background);
+    border: 1px solid var(--border-light);
+    color: var(--text-secondary);
+}
+
+.txRight {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.txDate {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.txAmount {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--tx-color, var(--text-primary));
+}
+
+.headerActions {
+    display: flex;
+    gap: 12px;
+}
+
+.centeredText {
+    padding: 20px;
+    text-align: center;
+}
+
+.noMargin {
+    margin: 0 !important;
 }

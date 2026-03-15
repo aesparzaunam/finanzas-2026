@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/app/lib/prisma';
+import { db } from '@/app/lib/firebase';
 import { cookies } from 'next/headers';
 
 export async function GET() {
@@ -11,14 +11,13 @@ export async function GET() {
             return NextResponse.json({ user: null }, { status: 200 });
         }
 
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
-        });
+        const userDoc = await db.collection('users').doc(userId).get();
 
-        if (!user) {
+        if (!userDoc.exists) {
             return NextResponse.json({ user: null }, { status: 200 });
         }
 
+        const user = userDoc.data() as any;
         const { password: _, ...userWithoutPassword } = user;
 
         return NextResponse.json({ user: userWithoutPassword }, { status: 200 });

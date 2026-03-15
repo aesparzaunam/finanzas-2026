@@ -6,7 +6,7 @@ interface AccountProps {
     type: string;
     balance: number;
     currency: string;
-    onEdit?: (account: any) => void;
+    onEdit?: (account: { id: string; name: string; type: string; balance: number; currency: string }) => void;
     onDelete?: (id: string) => void;
 }
 
@@ -37,7 +37,7 @@ export default function AccountCard({ id, name, type, balance, currency, onEdit,
         <div className={styles.card}>
             <div className={styles.header}>
                 <div className={styles.name}>{name}</div>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <div className={styles.typeContainer}>
                     <div className={`${styles.type} ${typeClassMap[type] || ''}`}>
                         {typeLabels[type] || type}
                     </div>
@@ -48,17 +48,16 @@ export default function AccountCard({ id, name, type, balance, currency, onEdit,
                                     className={styles.actionBtn}
                                     onClick={() => onEdit({ id, name, type, balance, currency })}
                                     title="Editar cuenta"
-                                    style={{ color: 'var(--text-secondary)' }}
+
                                 >
                                     ✏️
                                 </button>
                             )}
                             {onDelete && (
                                 <button
-                                    className={styles.actionBtn}
+                                    className={`${styles.actionBtn} ${styles.deleteBtn}`}
                                     onClick={() => onDelete(id)}
                                     title="Eliminar cuenta"
-                                    style={{ color: 'var(--danger)' }}
                                 >
                                     🗑️
                                 </button>

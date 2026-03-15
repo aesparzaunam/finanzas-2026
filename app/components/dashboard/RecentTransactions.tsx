@@ -19,7 +19,8 @@ export default function RecentTransactions() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch('/api/transactions')
+        // Fetch a small chunk to quickly get the 5 most recent non-parent transactions
+        fetch('/api/transactions?limit=15')
             .then(async res => {
                 if (res.ok) {
                     const data = await res.json();

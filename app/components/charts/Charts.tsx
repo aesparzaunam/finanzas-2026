@@ -32,16 +32,18 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
         return (
             <div className={styles.tooltipContainer}>
                 <p className={styles.tooltipLabel}>{label}</p>
-                {payload.map((entry, index) => (
-                    (() => {
-                        const style = { '--entry-color': entry.color } as any;
-                        return (
-                            <p key={index} className={styles.tooltipEntry} style={style}>
-                                {entry.name}: {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(entry.value)}
-                            </p>
-                        );
-                    })()
-                ))}
+                {payload.map((entry, index) => {
+                    const entryStyle = { '--entry-color': entry.color } as React.CSSProperties;
+                    return (
+                        <p
+                            key={index}
+                            className={styles.tooltipEntry}
+                            style={entryStyle}
+                        >
+                            {entry.name}: {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(entry.value)}
+                        </p>
+                    );
+                })}
             </div>
         );
     }

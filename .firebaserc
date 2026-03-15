@@ -1,0 +1,11 @@
+{
+  "projects": {
+    "default": "mis-finanzas-d419c"
+  },
+  "targets": {
+    "mis-finanzas-d419c": {
+      "hosting": {}
+    }
+  },
+  "etags": {}
+}

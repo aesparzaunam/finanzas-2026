@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/app/lib/prisma';
+import { db } from '@/app/lib/firebase';
 import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
 
@@ -11,13 +11,14 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Missing credentials' }, { status: 400 });
         }
 
-        const user = await prisma.user.findUnique({
-            where: { email },
-        });
+        const snapshot = await db.collection('users').where('email', '==', email).limit(1).get();
 
-        if (!user) {
+        if (snapshot.empty) {
             return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
         }
+
+        const userDoc = snapshot.docs[0];
+        const user = userDoc.data();
 
         const isValid = await bcrypt.compare(password, user.password);
 
@@ -26,8 +27,6 @@ export async function POST(request: Request) {
         }
 
         // Set session cookie
-        // Simple implementation: storing userId in cookie. 
-        // In production, use a signed JWT or session ID.
         const cookieStore = await cookies();
         cookieStore.set('userId', user.id, {
             httpOnly: true,
@@ -37,7 +36,7 @@ export async function POST(request: Request) {
             path: '/',
         });
 
-        const { password: _, ...userWithoutPassword } = user;
+        const { password: _, ...userWithoutPassword } = user as any;
 
         return NextResponse.json(userWithoutPassword);
     } catch (error) {

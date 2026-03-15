@@ -23,6 +23,8 @@ export default function AccountsPage() {
     const [name, setName] = useState('');
     const [type, setType] = useState('BANK');
     const [balance, setBalance] = useState('');
+    const [billingDay, setBillingDay] = useState('1');
+    const [paymentDay, setPaymentDay] = useState('15');
     const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
@@ -43,7 +45,7 @@ export default function AccountsPage() {
         }
     }
 
-    const [editingAccount, setEditingAccount] = useState<Account | null>(null);
+    const [editingAccount, setEditingAccount] = useState<any | null>(null);
 
     const handleDelete = async (id: string) => {
         if (!confirm('¿Estás seguro de eliminar esta cuenta?')) return;
@@ -69,12 +71,7 @@ export default function AccountsPage() {
         const res = await fetch('/api/accounts', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                id: updatedAccount.id,
-                name: updatedAccount.name,
-                type: updatedAccount.type,
-                balance: updatedAccount.balance
-            })
+            body: JSON.stringify(updatedAccount)
         });
 
         if (res.ok) {
@@ -88,10 +85,21 @@ export default function AccountsPage() {
         e.preventDefault();
         setSubmitting(true);
         try {
+            const body: any = { 
+                name, 
+                type, 
+                balance: Number(balance) 
+            };
+            
+            if (type === 'CREDIT') {
+                body.billingDay = Number(billingDay);
+                body.paymentDay = Number(paymentDay);
+            }
+
             const res = await fetch('/api/accounts', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, type, balance }),
+                body: JSON.stringify(body),
             });
 
             if (res.ok) {
@@ -99,6 +107,8 @@ export default function AccountsPage() {
                 setName('');
                 setType('BANK');
                 setBalance('');
+                setBillingDay('1');
+                setPaymentDay('15');
                 fetchAccounts();
             } else {
                 alert('Failed to create account');
@@ -111,43 +121,45 @@ export default function AccountsPage() {
         }
     }
 
+    const dayOptions = Array.from({ length: 31 }, (_, i) => i + 1);
+
     return (
         <LayoutShell>
             <h1 className={dashStyles.pageTitle}>Cuentas</h1>
 
             {/* Create Account Form */}
             <div className={styles.formContainer}>
-                <div className={styles.formTitle}>Add New Account</div>
+                <div className={styles.formTitle}>Añadir Nueva Cuenta</div>
                 <form onSubmit={handleCreate}>
                     <div className={styles.formGrid}>
                         <div className={styles.inputGroup}>
-                            <label className={styles.label}>Account Name</label>
+                            <label className={styles.label}>Nombre de la cuenta</label>
                             <input
                                 className={styles.input}
                                 value={name}
                                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
-                                placeholder="e.g. Chase Checking"
+                                placeholder="ej. BBVA Débito"
                                 required
                             />
                         </div>
                         <div className={styles.inputGroup}>
-                            <label className={styles.label}>Type</label>
+                            <label className={styles.label}>Tipo</label>
                             <select
                                 id="account-type"
                                 className={styles.select}
                                 value={type}
-                                title="Select Account Type"
+                                title="Seleccionar tipo de cuenta"
                                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setType(e.target.value)}
                             >
-                                <option value="BANK">Bank Account</option>
-                                <option value="CASH">Cash Wallet</option>
-                                <option value="CREDIT">Credit Card</option>
-                                <option value="INVESTMENT">Investment</option>
-                                <option value="LOAN">Loan</option>
+                                <option value="BANK">Cuenta de Banco</option>
+                                <option value="CASH">Efectivo</option>
+                                <option value="CREDIT">Tarjeta de Crédito</option>
+                                <option value="INVESTMENT">Inversión</option>
+                                <option value="LOAN">Préstamo</option>
                             </select>
                         </div>
                         <div className={styles.inputGroup}>
-                            <label className={styles.label}>Initial Balance</label>
+                            <label className={styles.label}>Balance Inicial</label>
                             <input
                                 className={styles.input}
                                 type="number"
@@ -158,15 +170,46 @@ export default function AccountsPage() {
                                 required
                             />
                         </div>
+
+                        {type === 'CREDIT' && (
+                            <>
+                                <div className={styles.inputGroup}>
+                                    <label className={styles.label}>Día de Corte</label>
+                                    <select
+                                        className={styles.select}
+                                        value={billingDay}
+                                        onChange={(e) => setBillingDay(e.target.value)}
+                                        title="Día de Corte"
+                                    >
+                                        {dayOptions.map(day => (
+                                            <option key={day} value={day}>{day}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className={styles.inputGroup}>
+                                    <label className={styles.label}>Día de Pago</label>
+                                    <select
+                                        className={styles.select}
+                                        value={paymentDay}
+                                        onChange={(e) => setPaymentDay(e.target.value)}
+                                        title="Día de Pago"
+                                    >
+                                        {dayOptions.map(day => (
+                                            <option key={day} value={day}>{day}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </>
+                        )}
                     </div>
                     <button type="submit" className={styles.button} disabled={submitting}>
-                        {submitting ? 'Creating...' : 'Create Account'}
+                        {submitting ? 'Creando...' : 'Crear Cuenta'}
                     </button>
                 </form>
             </div>
 
             {loading ? (
-                <p>Loading accounts...</p>
+                <p className={styles.loadingText}>Cargando cuentas...</p>
             ) : (
                 <div className={styles.grid}>
                     {accounts.map((acc: Account) => (

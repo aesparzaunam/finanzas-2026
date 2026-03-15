@@ -12,17 +12,7 @@ interface Account {
     type: string;
 }
 
-interface MSIPlan {
-    id: string;
-    totalAmount: number;
-    months: number;
-    monthlyAmount: number;
-    startDate: string;
-    description: string;
-    status: string;
-    paidMonths: number;
-    categoryId?: string;
-}
+import { MSIPlan } from '@/app/lib/types';
 
 export default function MSIPage() {
     const [msiPlans, setMsiPlans] = useState<MSIPlan[]>([]);
@@ -91,7 +81,7 @@ export default function MSIPage() {
         }
     };
 
-    const [editingPlan, setEditingPlan] = useState<any>(null);
+    const [editingPlan, setEditingPlan] = useState<MSIPlan | null>(null);
 
     const handleDelete = async (id: string) => {
         if (!confirm('¿Estás seguro de cancelar este plan MSI? Se borrarán todas las transacciones asociadas.')) return;
@@ -114,7 +104,7 @@ export default function MSIPage() {
         }
     };
 
-    const handleUpdate = async (updatedPlan: any) => {
+    const handleUpdate = async (updatedPlan: MSIPlan) => {
         const res = await fetch('/api/msi', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -251,58 +241,52 @@ export default function MSIPage() {
                 </div>
             ) : (
                 <div className={styles.grid}>
-                    {msiPlans.map((plan: MSIPlan) => (
-                        <div key={plan.id} className={styles.card}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                <div className={styles.cardTitle}>{plan.description || 'Compra MSI'}</div>
-                                <div className={formStyles.actions}>
-                                    <button
-                                        onClick={() => setEditingPlan(plan)}
-                                        className={formStyles.actionBtn}
-                                        style={{ color: 'var(--text-secondary)' }}
-                                        title="Editar"
-                                    >
-                                        ✏️
-                                    </button>
-                                    <button
-                                        onClick={() => handleDelete(plan.id)}
-                                        className={formStyles.actionBtn}
-                                        style={{ color: 'var(--danger)' }}
-                                        title="Eliminar"
-                                    >
-                                        🗑️
-                                    </button>
+                    {msiPlans.map((plan: MSIPlan) => {
+                        const progressStyle = { '--progress-width': `${(plan.paidMonths / plan.months) * 100}%` } as React.CSSProperties;
+                        return (
+                            <div key={plan.id} className={styles.card}>
+                                <div className={`${styles.flexBetween} ${styles.alignStart}`}>
+                                    <div className={styles.cardTitle}>{plan.description || 'Compra MSI'}</div>
+                                    <div className={formStyles.actions}>
+                                        <button
+                                            onClick={() => setEditingPlan(plan)}
+                                            className={formStyles.actionBtn}
+                                            title="Editar"
+                                        >
+                                            ✏️
+                                        </button>
+                                        <button
+                                            onClick={() => handleDelete(plan.id)}
+                                            className={formStyles.actionBtn}
+                                            title="Eliminar"
+                                        >
+                                            🗑️
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className={styles.cardValue}>{formatCurrency(plan.totalAmount)}</div>
+                                <div className={`${styles.flexBetween} ${styles.textSmSecondary}`}>
+                                    <span>{plan.months} meses</span>
+                                    <span>{formatCurrency(plan.monthlyAmount)}/mes</span>
+                                </div>
+                                <div className={styles.mt3}>
+                                    <div className={`${styles.flexBetween} ${styles.textXsMuted} ${styles.mb4}`}>
+                                        <span>Progreso</span>
+                                        <span>{plan.paidMonths}/{plan.months} meses</span>
+                                    </div>
+                                    <div className={styles.progressBarWrapper}>
+                                        <div
+                                            className={styles.progressBar}
+                                            style={progressStyle}
+                                        />
+                                    </div>
+                                </div>
+                                <div className={`${styles.mt2} ${styles.textXsMuted}`}>
+                                    Inicio: {formatDate(plan.startDate)}
                                 </div>
                             </div>
-                            <div className={styles.cardValue}>{formatCurrency(plan.totalAmount)}</div>
-                            <div className={`${styles.flexBetween} ${styles.textSmSecondary}`}>
-                                <span>{plan.months} meses</span>
-                                <span>{formatCurrency(plan.monthlyAmount)}/mes</span>
-                            </div>
-                            <div className={styles.mt3}>
-                                <div className={`${styles.flexBetween} ${styles.textXsMuted} ${styles.mb4}`}>
-                                    <span>Progreso</span>
-                                    <span>{plan.paidMonths}/{plan.months} meses</span>
-                                </div>
-                                <div className={styles.progressBarWrapper}>
-                                    {(() => {
-                                        const style = {
-                                            '--progress-width': `${(plan.paidMonths / plan.months) * 100}%`
-                                        } as any;
-                                        return (
-                                            <div
-                                                className={styles.progressBar}
-                                                style={style}
-                                            />
-                                        );
-                                    })()}
-                                </div>
-                            </div>
-                            <div className={`${styles.mt2} ${styles.textXsMuted}`}>
-                                Inicio: {formatDate(plan.startDate)}
-                            </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
 

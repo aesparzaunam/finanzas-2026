@@ -43,3 +43,7 @@ next-env.d.ts
 /app/generated/prisma
 
 .env
+
+.firebase/
+firebase-debug.log*
+.firebase-admin.json.json

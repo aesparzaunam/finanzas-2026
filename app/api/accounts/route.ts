@@ -1,160 +1,131 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/app/lib/prisma';
-import { cookies } from 'next/headers';
-import { AccountType } from '@prisma/client';
+import { db } from '@/app/lib/firebase';
+import { getUserId, unauthorizedResponse, missingFieldsResponse, internalErrorResponse, notFoundResponse } from '@/app/lib/api-utils';
+import { Account, AccountType } from '@/app/lib/types';
+
+// Force refresh: 2026-03-15 03:15:00
 
 export async function GET() {
     try {
-        const cookieStore = await cookies();
-        const userId = cookieStore.get('userId')?.value;
+        const userId = await getUserId();
+        if (!userId) return unauthorizedResponse();
 
-        if (!userId) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
-        const accounts = await prisma.account.findMany({
-            where: { userId },
-            orderBy: { name: 'asc' },
-        });
+        const snapshot = await db.collection('users').doc(userId).collection('accounts').orderBy('name', 'asc').get();
+        const accounts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
         return NextResponse.json(accounts);
     } catch (error) {
-        console.error('Failed to fetch accounts:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return internalErrorResponse('GET Accounts', error);
     }
 }
 
 export async function POST(request: Request) {
     try {
-        const cookieStore = await cookies();
-        const userId = cookieStore.get('userId')?.value;
+        const userId = await getUserId();
+        if (!userId) return unauthorizedResponse();
 
-        if (!userId) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
-        const { name, type, balance, currency } = await request.json();
+        const { name, type, balance, currency, billingDay, paymentDay } = await request.json();
 
         if (!name || !type || balance === undefined) {
-            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+            return missingFieldsResponse(['name', 'type', 'balance']);
         }
 
-        // Validate type
-        const validTypes = ['BANK', 'CASH', 'CREDIT', 'INVESTMENT', 'LOAN'];
-        if (!validTypes.includes(type)) {
+        const validTypes: AccountType[] = ['BANK', 'CASH', 'CREDIT', 'INVESTMENT', 'LOAN'];
+        if (!validTypes.includes(type as AccountType)) {
             return NextResponse.json({ error: 'Invalid account type' }, { status: 400 });
         }
 
-        const account = await prisma.account.create({
-            data: {
-                userId,
-                name,
-                type: type as AccountType,
-                balance: Number(balance),
-                currency: currency || 'USD',
-            },
-        });
+        const accountRef = db.collection('users').doc(userId).collection('accounts').doc();
+        const accountData: Account = {
+            id: accountRef.id,
+            userId,
+            name,
+            type: type as AccountType,
+            balance: Number(balance),
+            currency: currency || 'USD',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
 
-        return NextResponse.json(account, { status: 201 });
+        if (type === 'CREDIT') {
+            accountData.billingDay = billingDay !== undefined ? Number(billingDay) : 1;
+            accountData.paymentDay = paymentDay !== undefined ? Number(paymentDay) : 15;
+        }
 
+        await accountRef.set(accountData);
+        return NextResponse.json(accountData, { status: 201 });
     } catch (error) {
-        console.error('Failed to create account:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return internalErrorResponse('POST Account', error);
     }
 }
 
 export async function PUT(request: Request) {
     try {
-        const cookieStore = await cookies();
-        const userId = cookieStore.get('userId')?.value;
+        const userId = await getUserId();
+        if (!userId) return unauthorizedResponse();
 
-        if (!userId) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+        const data = await request.json();
+        const { id, name, type, balance, currency, billingDay, paymentDay } = data;
+        if (!id) return missingFieldsResponse(['id']);
 
-        const { id, name, type, balance, currency } = await request.json();
+        const accountRef = db.collection('users').doc(userId).collection('accounts').doc(id);
+        const doc = await accountRef.get();
+        if (!doc.exists) return notFoundResponse('Account');
 
-        if (!id) {
-            return NextResponse.json({ error: 'Account ID is required' }, { status: 400 });
-        }
-
-        // Verify account belongs to user
-        const existing = await prisma.account.findFirst({
-            where: { id, userId }
-        });
-
-        if (!existing) {
-            return NextResponse.json({ error: 'Account not found' }, { status: 404 });
-        }
-
-        // Validate type if provided
         if (type) {
-            const validTypes = ['BANK', 'CASH', 'CREDIT', 'INVESTMENT', 'LOAN'];
-            if (!validTypes.includes(type)) {
+            const validTypes: AccountType[] = ['BANK', 'CASH', 'CREDIT', 'INVESTMENT', 'LOAN'];
+            if (!validTypes.includes(type as AccountType)) {
                 return NextResponse.json({ error: 'Invalid account type' }, { status: 400 });
             }
         }
 
-        const updatedAccount = await prisma.account.update({
-            where: { id },
-            data: {
-                ...(name !== undefined && { name }),
-                ...(type !== undefined && { type: type as AccountType }),
-                ...(balance !== undefined && { balance: Number(balance) }),
-                ...(currency !== undefined && { currency })
-            }
-        });
+        const updateData: Partial<Account> = {
+            updatedAt: new Date().toISOString()
+        };
+        if (name !== undefined) updateData.name = name;
+        if (type !== undefined) updateData.type = type as AccountType;
+        if (balance !== undefined) updateData.balance = Number(balance);
+        if (currency !== undefined) updateData.currency = currency;
+        
+        if (type === 'CREDIT' || (!type && (doc.data()?.type === 'CREDIT'))) {
+            if (billingDay !== undefined) updateData.billingDay = Number(billingDay);
+            if (paymentDay !== undefined) updateData.paymentDay = Number(paymentDay);
+        }
 
-        return NextResponse.json(updatedAccount);
+        await accountRef.update(updateData);
+        return NextResponse.json({ id, ...doc.data(), ...updateData });
     } catch (error) {
-        console.error('Failed to update account:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return internalErrorResponse('PUT Account', error);
     }
 }
 
 export async function DELETE(request: Request) {
     try {
-        const cookieStore = await cookies();
-        const userId = cookieStore.get('userId')?.value;
-
-        if (!userId) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+        const userId = await getUserId();
+        if (!userId) return unauthorizedResponse();
 
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
+        if (!id) return missingFieldsResponse(['id']);
 
-        if (!id) {
-            return NextResponse.json({ error: 'Account ID is required' }, { status: 400 });
-        }
+        const accountRef = db.collection('users').doc(userId).collection('accounts').doc(id);
+        const doc = await accountRef.get();
+        if (!doc.exists) return notFoundResponse('Account');
 
-        // Verify account belongs to user
-        const existing = await prisma.account.findFirst({
-            where: { id, userId }
-        });
+        const transactionSnap = await db.collection('users').doc(userId).collection('transactions')
+            .where('accountId', '==', id)
+            .limit(1)
+            .get();
 
-        if (!existing) {
-            return NextResponse.json({ error: 'Account not found' }, { status: 404 });
-        }
-
-        // Check if account has transactions
-        const transactionCount = await prisma.transaction.count({
-            where: { accountId: id }
-        });
-
-        if (transactionCount > 0) {
+        if (!transactionSnap.empty) {
             return NextResponse.json({
                 error: 'No se puede eliminar una cuenta con transacciones. Elimina primero las transacciones.'
             }, { status: 400 });
         }
 
-        await prisma.account.delete({
-            where: { id }
-        });
-
+        await accountRef.delete();
         return NextResponse.json({ success: true });
     } catch (error) {
-        console.error('Failed to delete account:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return internalErrorResponse('DELETE Account', error);
     }
 }

@@ -3,37 +3,54 @@
 import { useState } from 'react';
 import { useAuth } from '@/app/context/AuthProvider';
 import Link from 'next/link';
+import { auth, googleProvider, signInWithPopup } from '@/app/lib/firebase-client';
+import Image from 'next/image';
 import styles from '../auth.module.css';
 
 export default function LoginPage() {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const { login } = useAuth();
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleGoogleLogin = async () => {
         setError('');
         setLoading(true);
-
         try {
-            const res = await fetch('/api/auth/login', {
+            const result = await signInWithPopup(auth, googleProvider);
+            const user = result.user;
+
+            const res = await fetch('/api/auth/google', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password }),
+                body: JSON.stringify({
+                    uid: user.uid,
+                    email: user.email,
+                    name: user.displayName,
+                    photoURL: user.photoURL,
+                }),
             });
 
             if (res.ok) {
-                const user = await res.json();
-                login(user);
+                const userData = await res.json();
+                login(userData);
             } else {
-                const data = await res.json();
-                setError(data.error || 'Invalid credentials');
+                const text = await res.text();
+                let errMsg = 'Google login failed';
+                try {
+                    const data = JSON.parse(text);
+                    errMsg = data.error || data.details || errMsg;
+                } catch {
+                    console.error("Non-JSON API error response:", text);
+                    errMsg = `Server Error (${res.status}): ${text.substring(0, 500)}`;
+                }
+                setError(errMsg);
             }
-        } catch (err) {
+        } catch (err: unknown) {
             console.error(err);
-            setError('An error occurred');
+            const authError = err as { code?: string, message?: string };
+            if (authError.code !== 'auth/popup-closed-by-user') {
+                setError(authError.message || 'Google Auth Error');
+            }
         } finally {
             setLoading(false);
         }
@@ -42,42 +59,32 @@ export default function LoginPage() {
     return (
         <div className={styles.container}>
             <div className={styles.card}>
-                <h1 className={styles.title}>Login</h1>
-                <form onSubmit={handleSubmit} className={styles.form}>
-                    {error && <div className={styles.error} role="alert">{error}</div>}
-                    <div className={styles.inputGroup}>
-                        <label htmlFor="email-login" className={styles.label}>Email</label>
-                        <input
-                            id="email-login"
-                            className={styles.input}
-                            type="email"
-                            placeholder="email@example.com"
-                            title="Email Address"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <div className={styles.inputGroup}>
-                        <label htmlFor="password-login" className={styles.label}>Password</label>
-                        <input
-                            id="password-login"
-                            className={styles.input}
-                            type="password"
-                            placeholder="••••••"
-                            title="Password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <button type="submit" className={styles.button} disabled={loading}>
-                        {loading ? 'Signing In...' : 'Sign In'}
-                    </button>
-                </form>
-                <p className={styles.link}>
-                    Don&apos;t have an account? <Link href="/auth/register">Register</Link>
+                <div className={styles.logoContainer}>
+                    <Image src="/logo.jpeg" alt="Logo" width={64} height={64} className={styles.logoImg} />
+                </div>
+                <h1 className={styles.title}>Mis Finanzas</h1>
+
+                <p className={styles.linkContainer}>
+                    ¿No tienes una cuenta? <Link href="/auth/register">Regístrate</Link>
                 </p>
+
+                <div className={styles.googleWrapper}>
+                    <p className={styles.googleSubtitle}>
+                        Inicia sesión con tu cuenta de Google para acceder a tu dashboard
+                    </p>
+
+                    {error && <div className={styles.error} role="alert">{error}</div>}
+
+                    <button
+                        type="button"
+                        className={styles.googleButton}
+                        onClick={handleGoogleLogin}
+                        disabled={loading}
+                        aria-label="Iniciar sesión con Google"
+                    >
+                        {loading ? 'Conectando...' : 'Iniciar sesión con Google 🚀'}
+                    </button>
+                </div>
             </div>
         </div>
     );

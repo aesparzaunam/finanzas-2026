@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/app/lib/prisma';
+import { db } from '@/app/lib/firebase';
 import bcrypt from 'bcryptjs';
+import { cookies } from 'next/headers';
 
 export async function POST(request: Request) {
     try {
@@ -8,35 +9,42 @@ export async function POST(request: Request) {
         console.log('[Register] Attempting to register user:', email);
 
         if (!email || !password) {
-            console.log('[Register] Missing credentials');
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
-        console.log('[Register] Checking existing user...');
-
         // Check if user exists
-        const existingUser = await prisma.user.findUnique({
-            where: { email },
-        });
+        const userRef = db.collection('users').where('email', '==', email);
+        const snapshot = await userRef.get();
 
-        if (existingUser) {
+        if (!snapshot.empty) {
             return NextResponse.json({ error: 'User already exists' }, { status: 409 });
         }
 
-        // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Create user
-        const user = await prisma.user.create({
-            data: {
-                name,
-                email,
-                password: hashedPassword,
-            },
+        const newUserRef = db.collection('users').doc();
+        const userData = {
+            id: newUserRef.id,
+            name: name || '',
+            email,
+            password: hashedPassword,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+
+        await newUserRef.set(userData);
+
+        // Set session cookie
+        const cookieStore = await cookies();
+        cookieStore.set('userId', userData.id, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 60 * 60 * 24 * 7, // 1 week
+            path: '/',
         });
 
-        // Return user without password
-        const { password: _, ...userWithoutPassword } = user;
+        const { password: _, ...userWithoutPassword } = userData;
 
         return NextResponse.json(userWithoutPassword, { status: 201 });
     } catch (error: any) {
@@ -44,7 +52,8 @@ export async function POST(request: Request) {
         return NextResponse.json({
             error: 'Internal Server Error',
             details: error.message,
-            code: error.code // Prisma error codes are useful
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+            code: error.code
         }, { status: 500 });
     }
 }

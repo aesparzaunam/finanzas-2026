@@ -1,10 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import MetricCard from './MetricCard';
-import Charts from '../charts/Charts';
 import RecentTransactions from './RecentTransactions';
 import styles from './dashboard.module.css';
+
+// Lazy load Recharts (which is quite heavy) to improve initial page load performance
+const Charts = dynamic(() => import('../charts/Charts'), {
+    ssr: false,
+    loading: () => <div className={styles.loadingState}>Cargando visualizaciones...</div>
+});
 
 interface DashboardMetrics {
     netWorth: number;

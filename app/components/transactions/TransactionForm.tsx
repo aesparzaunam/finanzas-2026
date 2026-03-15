@@ -60,7 +60,7 @@ export default function TransactionForm({ onCheckSubmit, onCancel }: Transaction
                 accountId,
                 categoryId,
                 date,
-                ...(type === 'TRANSFER' && { toAccountId })
+                ...(type === 'TRANSFER' || type === 'PAGO_TARJETA' ? { toAccountId } : {})
             });
         } finally {
             setSubmitting(false);
