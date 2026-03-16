@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, BarChart2, CreditCard, LayoutTemplate, PieChart, LogOut, Bell, Sun, Moon, Plus } from "lucide-react";
+import { Home, BarChart2, CreditCard, LayoutTemplate, PieChart, LogOut, Sun, Moon, Plus } from "lucide-react";
 import { useAuth } from "@/app/context/AuthProvider";
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import styles from "./dashboard.module.css";
 
@@ -20,12 +20,14 @@ const navLinks = [
 export default function Header() {
     const pathname = usePathname();
     const { user, logout } = useAuth();
-    const { theme, setTheme } = useTheme();
-    const [mounted, setMounted] = useState(false);
+    const { setTheme, resolvedTheme } = useTheme();
 
-    useEffect(() => {
-        setMounted(true);
-    }, []);
+    // Patrón oficial next-themes: esperar a que el cliente hidrate
+    // antes de leer resolvedTheme para evitar mismatch SSR/cliente
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => { setMounted(true); }, []);
+
+    const isDark = mounted && resolvedTheme === 'dark';
 
     return (
         <header className={styles.header}>
@@ -64,15 +66,21 @@ export default function Header() {
 
                 {/* User Actions Section */}
                 <div className={styles.headerRight}>
-                    {mounted && (
-                        <button 
-                            className={styles.iconButton} 
-                            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                            aria-label="Cambiar Tema"
-                        >
-                            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-                        </button>
-                    )}
+                    <button 
+                        className={`${styles.iconButton} ${styles.themeBtn}`} 
+                        onClick={() => setTheme(isDark ? 'light' : 'dark')}
+                        aria-label={mounted ? (isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro') : 'Cambiar Tema'}
+                        title={mounted ? (isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro') : 'Cambiar Tema'}
+                    >
+                        {mounted ? (
+                            isDark ? <Sun size={16} /> : <Moon size={16} />
+                        ) : (
+                            <Moon size={16} />
+                        )}
+                        <span className={styles.themeBtnLabel}>
+                            {mounted ? (isDark ? 'Claro' : 'Oscuro') : 'Tema'}
+                        </span>
+                    </button>
                     
                     <Link 
                         href="/transactions/new" 
@@ -82,10 +90,6 @@ export default function Header() {
                     >
                         <Plus size={20} />
                     </Link>
-                    
-                    <button className={styles.iconButton} aria-label="Notificaciones">
-                        <Bell size={20} />
-                    </button>
 
                     <div className={styles.userSection}>
                         <div className={styles.userAvatar}>

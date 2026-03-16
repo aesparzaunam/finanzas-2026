@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar } from 'lucide-react';
+
 import styles from './analysis.module.css';
 
 interface UpcomingPaymentItem {
@@ -16,7 +16,7 @@ interface UpcomingPaymentsProps {
 
 export default function UpcomingPayments({ payments }: UpcomingPaymentsProps) {
     if (payments.length === 0) return (
-        <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+        <div className={styles.emptyPayments}>
             No hay pagos programados pronto.
         </div>
     );

@@ -3,6 +3,7 @@
 import { AlertCircle } from 'lucide-react';
 import { DebtRatioData } from '@/app/lib/types';
 import styles from './analysis.module.css';
+import { StyledDiv } from '../ui/StyledElements';
 
 interface DebtRatioWidgetProps {
     data: DebtRatioData;
@@ -14,42 +15,42 @@ export default function DebtRatioWidget({ data }: DebtRatioWidgetProps) {
     const rotation = (data.ratio * 180) - 90;
     const limitedRotation = Math.min(Math.max(rotation, -90), 90);
 
-    const formatCurrency = (val: number) => 
+    const formatCurrency = (val: number) =>
         new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(val);
 
     return (
         <div className={styles.ratioWrapper}>
             <div className={styles.gaugeContainer}>
                 <div className={styles.gaugeBackground} />
-                <div 
-                    className={`${styles.gaugeFill} ${data.isWarning ? styles.warning : ''}`} 
-                    style={{ '--ratio-deg': `${limitedRotation}deg` } as any}
+                <StyledDiv
+                    className={`${styles.gaugeFill} ${data.isWarning ? styles.warning : ''}`}
+                    applyStyle={{ transform: `rotate(${limitedRotation}deg)` }}
                 />
             </div>
-            
+
             <div className={styles.ratioValue}>
                 {percentage}%
             </div>
-            
+
             <div className={styles.ratioLabel}>
                 Ratio de Endeudamiento
             </div>
 
-            <div className={styles.grid} style={{ gridTemplateColumns: '1fr', width: '100%', gap: '8px', marginTop: '8px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>Ingreso Promedio:</span>
-                    <span style={{ fontWeight: 600 }}>{formatCurrency(data.avgIncome)}</span>
+            <div className={styles.debtInfoGrid}>
+                <div className={styles.debtInfoRow}>
+                    <span className={styles.debtInfoLabel}>Ingreso Promedio:</span>
+                    <span className={styles.debtInfoValue}>{formatCurrency(data.avgIncome)}</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>Pasivos Fijos:</span>
-                    <span style={{ color: data.isWarning ? 'var(--danger)' : 'inherit', fontWeight: 600 }}>
+                <div className={styles.debtInfoRow}>
+                    <span className={styles.debtInfoLabel}>Pasivos Fijos:</span>
+                    <span className={data.isWarning ? styles.debtInfoValueDanger : styles.debtInfoValue}>
                         {formatCurrency(data.fixedLiabilities)}
                     </span>
                 </div>
             </div>
 
             {data.isWarning && (
-                <div style={{ color: 'var(--danger)', fontSize: '10px', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '8px' }}>
+                <div className={styles.debtWarning}>
                     <AlertCircle size={12} />
                     <span>Límite sugerido (40%) superado</span>
                 </div>

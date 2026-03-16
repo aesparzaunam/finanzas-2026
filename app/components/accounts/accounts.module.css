@@ -86,6 +86,18 @@
     gap: var(--space-4);
 }
 
+.formGridColumn {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.creditDaysGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+}
+
 .inputGroup {
     display: flex;
     flex-direction: column;
@@ -335,3 +347,208 @@
     text-align: center;
     padding: 20px;
 }
+
+/* ============================
+   NUEVOS ESTILOS — FASE 1
+   ============================ */
+
+/* Separador de sección dentro del modal */
+.sectionDivider {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    padding: 4px 0 2px;
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+/* Hint inline junto al label */
+.labelHint {
+    display: inline-block;
+    margin-left: 6px;
+    font-size: 10px;
+    font-weight: 400;
+    color: var(--primary);
+    background: var(--primary-light);
+    padding: 1px 6px;
+    border-radius: 9999px;
+    vertical-align: middle;
+}
+
+/* Wrapper para input con prefijo/sufijo */
+.inputWithSuffix {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.inputWithSuffix .input {
+    flex: 1;
+    padding-right: 28px;
+}
+
+.inputSuffix {
+    position: absolute;
+    right: 10px;
+    font-size: 13px;
+    color: var(--text-muted);
+    pointer-events: none;
+    font-weight: 600;
+}
+
+.inputPrefix {
+    position: absolute;
+    left: 10px;
+    font-size: 13px;
+    color: var(--text-muted);
+    pointer-events: none;
+    font-weight: 600;
+    z-index: 1;
+}
+
+/* Preview del costo diario de interés */
+.ratePreview {
+    font-size: 11px;
+    color: var(--text-muted);
+    background: rgba(239, 68, 68, 0.07);
+    border: 1px solid rgba(239, 68, 68, 0.15);
+    border-radius: var(--radius-md);
+    padding: 5px 10px;
+    margin-top: 2px;
+}
+
+.ratePreview strong {
+    color: #ef4444;
+}
+
+/* Toggle switch para isShared */
+.toggleRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    background: var(--background);
+    cursor: pointer;
+    transition: border-color 0.2s;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.toggleRow:hover {
+    border-color: var(--primary);
+}
+
+.toggleInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.toggleLabel {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.toggleDesc {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.toggleTrack {
+    position: relative;
+    width: 38px;
+    height: 22px;
+    background: var(--border-default);
+    border-radius: 9999px;
+    transition: background 0.2s;
+    flex-shrink: 0;
+}
+
+.toggleActive {
+    background: var(--primary);
+}
+
+.toggleThumb {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toggleActive .toggleThumb {
+    transform: translateX(16px);
+}
+
+/* Caja de info contextual */
+.infoBox {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 12px;
+    background: rgba(59,130,246,0.07);
+    border: 1px solid rgba(59,130,246,0.2);
+    border-radius: var(--radius-lg);
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+/* Caja de error en el modal */
+.errorBox {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: rgba(239,68,68,0.09);
+    border: 1px solid rgba(239,68,68,0.25);
+    border-radius: var(--radius-lg);
+    font-size: 13px;
+    color: #ef4444;
+}
+
+/* ============================
+   UTILIDADES MODAL AMPLIADO
+   ============================ */
+
+/* Modal con altura controlada */
+.modalTall {
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* Subtítulo del modal (nombre de la cuenta) */
+.modalSubtitle {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 2px 0 0;
+}
+
+/* Checkbox oculto dentro del toggle */
+.hiddenCheckbox {
+    display: none;
+}
+
+/* Input con prefijo de moneda ($) */
+.inputWithPrefix {
+    padding-left: 24px;
+}
+
+/* Icono inline dentro de un label */
+.inlineLabelIcon {
+    display: inline;
+    vertical-align: middle;
+    margin-right: 4px;
+}
+

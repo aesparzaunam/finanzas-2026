@@ -1,4 +1,14 @@
 export type AccountType = 'BANK' | 'CASH' | 'CREDIT' | 'INVESTMENT' | 'LOAN';
+export type AccountRole = 'OWNER' | 'EDITOR' | 'VIEWER';
+
+export interface AccountAccess {
+    id: string;
+    userId: string;      // quien tiene el acceso
+    accountId: string;
+    role: AccountRole;
+    grantedBy: string;   // userId del OWNER
+    createdAt: string;
+}
 export type TransactionType = 'INCOME' | 'EXPENSE' | 'TRANSFER' | 'MSI_CHARGE';
 export type BudgetPeriod = 'MONTHLY' | 'YEARLY';
 
@@ -6,20 +16,26 @@ export interface User {
     id: string;
     name: string;
     email: string;
+    familyId?: string;   // Fase 3: agrupar usuarios en un hogar
     createdAt: string;
     updatedAt: string;
 }
 
 export interface Account {
     id: string;
-    userId: string;
+    userId: string;             // ownerId — quien creó la cuenta
     name: string;
     type: AccountType;
     balance: number;
     currency: string;
-    // For CREDIT accounts
-    billingDay?: number; 
+    // For CREDIT / LOAN accounts — Fase 1
+    billingDay?: number;
     paymentDay?: number;
+    annualRate?: number;        // CAT anual en % (ej: 45.5)
+    minPayment?: number;        // Pago mínimo mensual
+    interestStartDate?: string; // Fecha desde la que empieza a acumularse interés
+    // Colaboración — Fase 3
+    isShared?: boolean;         // Si true, otros usuarios con AccountAccess pueden verla
     createdAt: string;
     updatedAt: string;
 }
@@ -86,6 +102,10 @@ export interface Transaction {
     msiPlanId?: string | null;
     isParent?: boolean;
     parentId?: string | null;
+    // Fase 1: trazabilidad y deducibilidad
+    createdById?: string;       // userId de quien registró (puede diferir si cuenta es shared)
+    isDeductible?: boolean;     // ¿Es deducible de impuestos?
+    toAccountId?: string;       // Para TRANSFER / PAGO_TARJETA
     createdAt: string;
     updatedAt: string;
 }

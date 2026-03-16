@@ -16,7 +16,7 @@ export default function CreateRecurringModal({ onClose, onSuccess }: CreateRecur
     const [accountId, setAccountId] = useState('');
     const [frequency, setFrequency] = useState('MONTHLY');
     const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
-    
+
     const [categories, setCategories] = useState<any[]>([]);
     const [accounts, setAccounts] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
@@ -86,7 +86,7 @@ export default function CreateRecurringModal({ onClose, onSuccess }: CreateRecur
                         />
                     </div>
 
-                    <div className={styles.grid} style={{ gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div className={styles.gridTwoCols}>
                         <div className={styles.formGroup}>
                             <label className={styles.label} htmlFor="amount">Monto</label>
                             <input
@@ -103,7 +103,7 @@ export default function CreateRecurringModal({ onClose, onSuccess }: CreateRecur
                         </div>
                         <div className={styles.formGroup}>
                             <label className={styles.label} htmlFor="frequency">Frecuencia</label>
-                            <select 
+                            <select
                                 id="frequency"
                                 title="Frecuencia"
                                 className={styles.select}
@@ -119,7 +119,7 @@ export default function CreateRecurringModal({ onClose, onSuccess }: CreateRecur
 
                     <div className={styles.formGroup}>
                         <label className={styles.label} htmlFor="account">Cuenta de Pago</label>
-                        <select 
+                        <select
                             id="account"
                             title="Cuenta de Pago"
                             className={styles.select}
@@ -136,7 +136,7 @@ export default function CreateRecurringModal({ onClose, onSuccess }: CreateRecur
 
                     <div className={styles.formGroup}>
                         <label className={styles.label} htmlFor="category">Categoría (Opcional)</label>
-                        <select 
+                        <select
                             id="category"
                             title="Categoría"
                             className={styles.select}

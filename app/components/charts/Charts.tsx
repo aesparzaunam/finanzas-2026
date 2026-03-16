@@ -2,6 +2,7 @@
 
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, CartesianGrid, Line } from 'recharts';
 import styles from '../dashboard/dashboard.module.css';
+import { StyledSpan } from '../ui/StyledElements';
 
 interface HistoryItem {
     month: string;
@@ -32,18 +33,15 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
         return (
             <div className={styles.tooltipContainer}>
                 <p className={styles.tooltipLabel}>{label}</p>
-                {payload.map((entry, index) => {
-                    const entryStyle = { '--entry-color': entry.color } as React.CSSProperties;
-                    return (
-                        <p
+                {payload.map((entry, index) => (
+                        <StyledSpan
                             key={index}
                             className={styles.tooltipEntry}
-                            style={entryStyle}
+                            applyStyle={{ color: entry.color }}
                         >
                             {entry.name}: {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(entry.value)}
-                        </p>
-                    );
-                })}
+                        </StyledSpan>
+                    ))}
             </div>
         );
     }

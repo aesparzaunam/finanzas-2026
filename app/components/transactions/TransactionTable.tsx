@@ -1,6 +1,7 @@
 'use client';
 
 import styles from './transactions.module.css';
+import { StyledSpan } from '../ui/StyledElements';
 
 interface Transaction {
     id: string;
@@ -30,15 +31,17 @@ export default function TransactionTable({ transactions }: { transactions: Trans
                 </thead>
                 <tbody>
                     {transactions.map(tx => {
-                        const style = { '--category-color': tx.category?.color || 'var(--text-secondary)' } as React.CSSProperties;
                         return (
                             <tr key={tx.id}>
                                 <td className={styles.dateCell}>{new Date(tx.date).toLocaleDateString()}</td>
                                 <td className={styles.descCell}>{tx.description}</td>
                                 <td className={styles.categoryCell}>
-                                    <span className={styles.categoryName} style={style}>
+                                     <StyledSpan
+                                         className={styles.categoryName}
+                                         applyStyle={{ borderLeftColor: tx.category?.color || 'var(--text-secondary)' }}
+                                     >
                                         {tx.category?.icon} {tx.category?.name || 'Sin categoría'}
-                                    </span>
+                                    </StyledSpan>
                                 </td>
                                 <td className={styles.accountCell}>{tx.account?.name}</td>
                                 <td className={`${styles.amountCell} ${tx.type === 'INCOME' ? styles.income : (tx.type === 'TRANSFER' ? styles.transfer : styles.expense)}`}>

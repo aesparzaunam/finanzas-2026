@@ -1,6 +1,7 @@
 'use client';
 
 import styles from './budgets.module.css';
+import { StyledDiv } from '../ui/StyledElements';
 
 interface BudgetProps {
     budget: {
@@ -34,20 +35,19 @@ export default function BudgetCard({ budget, onEdit, onDelete }: BudgetProps) {
     const formatCurrency = (val: number) =>
         new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(val);
 
-    const iconStyle = {
-        '--cat-bg': category.color
-            ? `linear-gradient(135deg, ${category.color}, ${category.color}dd)`
-            : 'linear-gradient(135deg, #6b7280, #4b5563)'
-    } as React.CSSProperties;
-
-    const progressStyle = { '--progress-width': `${Math.min(percentage, 100)}%` } as React.CSSProperties;
 
     return (
         <div className={styles.card}>
             <div className={styles.header}>
-                <div className={styles.icon} style={iconStyle}>
+                <StyledDiv
+                    className={styles.icon}
+                    applyStyle={{ background: category.color
+                        ? `linear-gradient(135deg, ${category.color}, ${category.color}dd)`
+                        : 'linear-gradient(135deg, #6b7280, #4b5563)'
+                    }}
+                >
                     {category.icon || '💰'}
-                </div>
+                </StyledDiv>
                 <div className={styles.info}>
                     <h3>{category.name}</h3>
                     <span className={styles.period}>
@@ -88,9 +88,9 @@ export default function BudgetCard({ budget, onEdit, onDelete }: BudgetProps) {
                     </span>
                 </div>
                 <div className={styles.progressBarBg}>
-                    <div
+                <StyledDiv
                         className={`${styles.progressBarFill} ${progressClass}`}
-                        style={progressStyle}
+                        applyStyle={{ width: `${Math.min(percentage, 100)}%` }}
                     />
                 </div>
                 <div className={styles.percentageLabel}>

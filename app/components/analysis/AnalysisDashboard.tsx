@@ -63,7 +63,7 @@ export default function AnalysisDashboard() {
             </div>
 
             {/* Side Column: Health + Upcoming */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div className={styles.sideColumn}>
                 <div className={styles.panel}>
                     <div className={styles.panelHeader}>
                         <div className={styles.title}>
@@ -80,8 +80,8 @@ export default function AnalysisDashboard() {
                             <Calendar size={20} />
                             Próximos Pagos
                         </div>
-                        <button 
-                            className={styles.btnAddSmall} 
+                        <button
+                            className={styles.btnAddSmall}
                             onClick={() => setShowModal(true)}
                             title="Añadir Pago Recurrente"
                         >
@@ -94,9 +94,9 @@ export default function AnalysisDashboard() {
             </div>
 
             {showModal && (
-                <CreateRecurringModal 
-                    onClose={() => setShowModal(false)} 
-                    onSuccess={fetchData} 
+                <CreateRecurringModal
+                    onClose={() => setShowModal(false)}
+                    onSuccess={fetchData}
                 />
             )}
         </section>

@@ -5,6 +5,7 @@ import LayoutShell from '../components/dashboard/LayoutShell';
 import styles from '../components/dashboard/dashboard.module.css';
 import formStyles from '../components/accounts/accounts.module.css';
 import EditMSIModal from '../components/msi/EditMSIModal';
+import { StyledDiv } from '../components/ui/StyledElements';
 
 interface Account {
     id: string;
@@ -256,7 +257,7 @@ export default function MSIPage() {
             ) : (
                 <div className={styles.grid}>
                     {msiPlans.map((plan: MSIPlan) => {
-                        const progressStyle = { '--progress-width': `${(plan.paidMonths / plan.months) * 100}%` } as React.CSSProperties;
+                        const progressWidth = `${(plan.paidMonths / plan.months) * 100}%`;
                         return (
                             <div key={plan.id} className={styles.card}>
                                 <div className={`${styles.flexBetween} ${styles.alignStart}`}>
@@ -289,9 +290,9 @@ export default function MSIPage() {
                                         <span>{plan.paidMonths}/{plan.months} meses</span>
                                     </div>
                                     <div className={styles.progressBarWrapper}>
-                                        <div
+                                        <StyledDiv
                                             className={styles.progressBar}
-                                            style={progressStyle}
+                                            applyStyle={{ width: progressWidth }}
                                         />
                                     </div>
                                 </div>

@@ -82,6 +82,10 @@
 }
 
 /* Blue Balance Card */
+.balanceCardWrapper {
+    padding: var(--space-4) 0 var(--space-8);
+}
+
 .balanceCard {
     background: var(--primary);
     border-radius: 16px;
@@ -212,7 +216,7 @@
     right: 0;
     background: var(--primary);
     border-radius: 4px;
-    height: var(--bar-height, 0%);
+    height: 0%;
 }
 
 .barLabel {
@@ -354,7 +358,7 @@
     width: 40px;
     height: 40px;
     border-radius: 10px;
-    background: var(--tx-bg, var(--background));
+    background: var(--background);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -438,7 +442,7 @@
 .txAmount {
     font-size: 16px;
     font-weight: 700;
-    color: var(--tx-color, var(--text-primary));
+    color: var(--text-primary);
 }
 
 .headerActions {
@@ -453,4 +457,33 @@
 
 .noMargin {
     margin: 0 !important;
+}
+
+/* ── Fase 4: Módulo Prescriptivo ── */
+.patrimonySubnote {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-top: 4px;
+}
+
+.patrimonyToggleWrapper {
+    margin-bottom: 12px;
+}
+
+.intelligenceSection {
+    padding: 0 0 8px;
+}
+
+.intelligenceLabel {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-secondary, #94a3b8);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 12px;
+    padding-left: 2px;
+}
+
+.intelligenceWidgetBlock {
+    margin-bottom: 16px;
 }

@@ -7,6 +7,13 @@ import { ChevronDown, Repeat, Wallet, CreditCard, MoreHorizontal } from 'lucide-
 import { useAuth } from '@/app/context/AuthProvider';
 import Link from 'next/link';
 import AnalysisDashboard from './components/analysis/AnalysisDashboard';
+import PatrimonyToggle, { type PatrimonyView } from './components/dashboard/PatrimonyToggle';
+import RubrosDonutChart from './components/charts/RubrosDonutChart';
+import ArbitrageWidget from './components/charts/ArbitrageWidget';
+import DebtBurndownChart from './components/charts/DebtBurndownChart';
+import { StyledDiv } from './components/ui/StyledElements';
+
+
 
 interface DashboardMetrics {
     netWorth: number;
@@ -42,6 +49,8 @@ export default function Home() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState(6);
+  const [patrimonyView, setPatrimonyView] = useState<PatrimonyView>('personal');
+
 
   useEffect(() => {
     async function fetchData() {
@@ -127,12 +136,24 @@ export default function Home() {
     <LayoutShell>
       <div className={styles.pageContainer}>
         {/* Balance Card Section */}
-        <div style={{ padding: 'var(--space-4) 0 var(--space-8)' }}>
+        <div className={styles.balanceCardWrapper}>
            <div className={styles.balanceCard}>
-             <div className={styles.balanceLabel}>Patrimonio Neto</div>
+             {/* Toggle Patrimonio Personal / Hogar — Fase 3 */}
+             <div className={styles.patrimonyToggleWrapper}>
+               <PatrimonyToggle value={patrimonyView} onChange={setPatrimonyView} />
+             </div>
+
+             <div className={styles.balanceLabel}>
+               {patrimonyView === 'personal' ? 'Patrimonio Personal' : 'Vista del Hogar'}
+             </div>
              <div className={styles.balanceValue}>
                {loading ? 'Cargando...' : formatCurrency(metrics?.netWorth || 0)}
              </div>
+             {patrimonyView === 'hogar' && (
+               <div className={styles.patrimonySubnote}>
+                 Incluye cuentas compartidas (próximamente)
+               </div>
+             )}
              {metrics?.accountSummary && (
                <div className={styles.jointAccounts}>
                  <div className={styles.accountIcons}>
@@ -178,7 +199,7 @@ export default function Home() {
                 return (
                   <div key={index} className={styles.barCol}>
                   <div className={styles.bar}>
-                     <div className={styles.barFill} style={{ '--bar-height': `${heightPercent}%` } as React.CSSProperties} />
+                     <StyledDiv className={styles.barFill} applyStyle={{ height: `${heightPercent}%` }} />
                   </div>
                     <span className={styles.barLabel}>{dataItem.month}</span>
                   </div>
@@ -214,6 +235,30 @@ export default function Home() {
                 -{formatCurrency(rangeTotals.expense)}
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* ========================================
+            FASE 4: Módulo Prescriptivo Antigravity
+        ======================================== */}
+        <section className={styles.intelligenceSection}>
+          <div className={styles.intelligenceLabel}>
+            🚀 Inteligencia Financiera
+          </div>
+
+          {/* 4A: Widget de Arbitraje */}
+          <div className={styles.intelligenceWidgetBlock}>
+            <ArbitrageWidget />
+          </div>
+
+          {/* 4B: Donut Chart de Rubros */}
+          <div className={styles.intelligenceWidgetBlock}>
+            <RubrosDonutChart />
+          </div>
+
+          {/* 4C: Debt Burn-Down Chart */}
+          <div className={styles.intelligenceWidgetBlock}>
+            <DebtBurndownChart />
           </div>
         </section>
 
@@ -258,9 +303,9 @@ export default function Home() {
           ) : (
              transactions.map(tx => (
                 <div key={tx.id} className={styles.transactionItem}>
-                  <div className={styles.txIcon} style={{ '--tx-bg': tx.category?.color || 'var(--background)' } as React.CSSProperties}>
+                  <StyledDiv className={styles.txIcon} applyStyle={{ background: tx.category?.color || 'var(--background)' }}>
                      {tx.category?.icon || (tx.type === 'INCOME' ? '⬆️' : '🛒')}
-                  </div>
+                  </StyledDiv>
                   <div className={styles.txDetails}>
                     <div className={styles.txName}>{tx.description || tx.category?.name || 'Transacción'}</div>
                     <div className={styles.txMeta}>
@@ -280,9 +325,9 @@ export default function Home() {
                     </div>
                   </div>
                   <div className={styles.txRight}>
-                    <div className={styles.txAmount} style={{ '--tx-color': getTypeColor(tx.type) } as React.CSSProperties}>
+                    <StyledDiv className={styles.txAmount} applyStyle={{ color: getTypeColor(tx.type) }}>
                       {getTypeSign(tx.type)}{formatCurrency(Number(tx.amount))}
-                    </div>
+                    </StyledDiv>
                     <div className={styles.txDate}>{formatDate(tx.date)}</div>
                   </div>
                 </div>

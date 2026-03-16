@@ -24,7 +24,7 @@ export async function POST(request: Request) {
         const userId = await getUserId();
         if (!userId) return unauthorizedResponse();
 
-        const { name, type, balance, currency, billingDay, paymentDay } = await request.json();
+        const { name, type, balance, currency, billingDay, paymentDay, annualRate, minPayment, interestStartDate, isShared } = await request.json();
 
         if (!name || !type || balance === undefined) {
             return missingFieldsResponse(['name', 'type', 'balance']);
@@ -42,14 +42,23 @@ export async function POST(request: Request) {
             name,
             type: type as AccountType,
             balance: Number(balance),
-            currency: currency || 'USD',
+            currency: currency || 'MXN',
+            isShared: isShared === true,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
         };
 
-        if (type === 'CREDIT') {
-            accountData.billingDay = billingDay !== undefined ? Number(billingDay) : 1;
-            accountData.paymentDay = paymentDay !== undefined ? Number(paymentDay) : 15;
+        if (type === 'CREDIT' || type === 'LOAN') {
+            if (billingDay !== undefined) accountData.billingDay = Number(billingDay);
+            if (paymentDay !== undefined) accountData.paymentDay = Number(paymentDay);
+            if (annualRate !== undefined) accountData.annualRate = Number(annualRate);
+            if (minPayment !== undefined) accountData.minPayment = Number(minPayment);
+            if (interestStartDate) accountData.interestStartDate = interestStartDate;
+            // Defaults CREDIT
+            if (type === 'CREDIT') {
+                accountData.billingDay = accountData.billingDay ?? 1;
+                accountData.paymentDay = accountData.paymentDay ?? 15;
+            }
         }
 
         await accountRef.set(accountData);
@@ -59,13 +68,14 @@ export async function POST(request: Request) {
     }
 }
 
+
 export async function PUT(request: Request) {
     try {
         const userId = await getUserId();
         if (!userId) return unauthorizedResponse();
 
         const data = await request.json();
-        const { id, name, type, balance, currency, billingDay, paymentDay } = data;
+        const { id, name, type, balance, currency, billingDay, paymentDay, annualRate, minPayment, interestStartDate, isShared } = data;
         if (!id) return missingFieldsResponse(['id']);
 
         const accountRef = db.collection('users').doc(userId).collection('accounts').doc(id);
@@ -79,6 +89,7 @@ export async function PUT(request: Request) {
             }
         }
 
+        const currentType = type || doc.data()?.type;
         const updateData: Partial<Account> = {
             updatedAt: new Date().toISOString()
         };
@@ -86,10 +97,14 @@ export async function PUT(request: Request) {
         if (type !== undefined) updateData.type = type as AccountType;
         if (balance !== undefined) updateData.balance = Number(balance);
         if (currency !== undefined) updateData.currency = currency;
-        
-        if (type === 'CREDIT' || (!type && (doc.data()?.type === 'CREDIT'))) {
+        if (isShared !== undefined) updateData.isShared = isShared === true;
+
+        if (currentType === 'CREDIT' || currentType === 'LOAN') {
             if (billingDay !== undefined) updateData.billingDay = Number(billingDay);
             if (paymentDay !== undefined) updateData.paymentDay = Number(paymentDay);
+            if (annualRate !== undefined) updateData.annualRate = Number(annualRate);
+            if (minPayment !== undefined) updateData.minPayment = Number(minPayment);
+            if (interestStartDate !== undefined) updateData.interestStartDate = interestStartDate || null;
         }
 
         await accountRef.update(updateData);

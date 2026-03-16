@@ -1,0 +1,477 @@
+/* ================================
+   CHARTS WIDGETS MODULE CSS
+   (DebtBurndownChart, ArbitrageWidget, RubrosDonutChart)
+   ================================ */
+
+/* ── Shared card wrapper ── */
+.widgetCard {
+    background: var(--card-bg, rgba(30, 41, 59, 0.85));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 20px 16px;
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+}
+
+.widgetTitle {
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--text-primary, #f8fafc);
+    margin-bottom: 4px;
+}
+
+.widgetSubtitle {
+    font-size: 11px;
+    color: #64748b;
+    margin-bottom: 16px;
+}
+
+.centeredMessage {
+    text-align: center;
+    padding: 40px;
+    color: #64748b;
+    font-size: 13px;
+}
+
+.noDebtMessage {
+    text-align: center;
+    padding: 32px;
+    color: #10b981;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* ── Debt Burndown ── */
+.debtSelect {
+    width: 100%;
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: #cbd5e1;
+    font-size: 12px;
+    padding: 6px 10px;
+    margin-bottom: 12px;
+    cursor: pointer;
+}
+
+.kpiGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.kpiCard {
+    border-radius: 10px;
+    padding: 8px 10px;
+}
+
+.kpiCardDebt { background: rgba(239, 68, 68, 0.08); }
+.kpiCardBlue { background: rgba(59, 130, 246, 0.08); }
+.kpiCardGreen { background: rgba(16, 185, 129, 0.08); }
+
+.kpiLabel {
+    font-size: 10px;
+    color: #94a3b8;
+    margin-bottom: 2px;
+}
+
+.kpiValueDebt  { font-size: 16px; font-weight: 800; color: #ef4444; }
+.kpiValueBlue  { font-size: 16px; font-weight: 800; color: #3b82f6; }
+.kpiValueGreen { font-size: 16px; font-weight: 800; color: #10b981; }
+
+.extraPaymentSection {
+    margin-bottom: 16px;
+}
+
+.extraPaymentHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.extraPaymentLabel {
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+.extraPaymentValue {
+    font-size: 13px;
+    font-weight: 700;
+    color: #10b981;
+}
+
+.rangeInput {
+    width: 100%;
+    accent-color: #10b981;
+}
+
+.rangeHints {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: #475569;
+    margin-top: 2px;
+}
+
+/* Custom Tooltip */
+.tooltipBox {
+    background: #1e293b;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 10px 14px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.tooltipDateLabel {
+    font-size: 11px;
+    color: #64748b;
+    margin-bottom: 6px;
+}
+
+.tooltipRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 3px;
+}
+
+.tooltipDot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #fff;
+    flex-shrink: 0;
+}
+
+.tooltipSeries {
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.tooltipAmount {
+    font-size: 13px;
+    font-weight: 700;
+    color: #f8fafc;
+}
+
+/* Legend */
+.legendRow {
+    display: flex;
+    gap: 16px;
+    margin-top: 12px;
+    justify-content: center;
+}
+
+.legendItem {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.legendLine {
+    width: 16px;
+    height: 2px;
+    border-radius: 2px;
+}
+
+.legendLineRed  { background: #ef4444; }
+.legendLineGreen { background: #10b981; border-top: 2px dashed #10b981; }
+
+.legendLabelGray  { font-size: 10px; color: #94a3b8; }
+.legendLabelGreen { font-size: 10px; color: #10b981; font-weight: 600; }
+
+/* ── Arbitrage Widget ── */
+.arbitrageCardLoading,
+.arbitrageCardNoDebt {
+    background: var(--card-bg, rgba(30, 41, 59, 0.85));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 20px 16px;
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+}
+
+.arbitrageLoadingText {
+    text-align: center;
+    padding: 32px;
+    color: #64748b;
+    font-size: 13px;
+}
+
+.arbitrageNoDebtTitle {
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--text-primary, #f8fafc);
+    margin-bottom: 8px;
+}
+
+.arbitrageNoDebtText {
+    font-size: 13px;
+    color: #64748b;
+}
+
+.arbitrageTitle {
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--text-primary, #f8fafc);
+    margin-bottom: 16px;
+}
+
+.arbitrageGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.arbitrageDebtCard {
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 12px;
+    padding: 12px 14px;
+}
+
+.arbitrageInvestCard {
+    background: rgba(16, 185, 129, 0.07);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    border-radius: 12px;
+    padding: 12px 14px;
+}
+
+.arbitrageCardHeader {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.arbitrageDebtLabel {
+    font-size: 10px;
+    color: #ef4444;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.arbitrageInvestLabel {
+    font-size: 10px;
+    color: #10b981;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.arbitrageDebtValue {
+    font-size: 24px;
+    font-weight: 800;
+    color: #ef4444;
+    line-height: 1;
+}
+
+.arbitrageInvestValue {
+    font-size: 24px;
+    font-weight: 800;
+    color: #10b981;
+    line-height: 1;
+}
+
+.arbitrageSubtext {
+    font-size: 10px;
+    color: #94a3b8;
+    margin-top: 4px;
+}
+
+.arbitrageVeredicto {
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.arbitrageVeredictoOk {
+    background: rgba(16, 185, 129, 0.07);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.arbitrageVeredictoAlert {
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.arbitrageVeredictoText {
+    font-size: 12px;
+    color: #e2e8f0;
+    line-height: 1.5;
+}
+
+.arbitrageFooter {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.arbitrageFooterLabel {
+    font-size: 11px;
+    color: #64748b;
+}
+
+.arbitrageFooterValue {
+    font-size: 14px;
+    font-weight: 700;
+    color: #ef4444;
+}
+
+/* ── Rubros Donut Chart ── */
+.rubrosHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.rubrosTitle {
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--text-primary, #f8fafc);
+}
+
+.rubrosSubtitle {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+.rubrosPeriodSelect {
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: #cbd5e1;
+    font-size: 12px;
+    padding: 4px 8px;
+    cursor: pointer;
+}
+
+.rubrosTooltip {
+    background: var(--surface, #1e293b);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 12px 16px;
+    color: var(--text-primary, #f8fafc);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    min-width: 180px;
+}
+
+.rubrosTooltipTitle {
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.rubrosTooltipTotal {
+    font-size: 18px;
+    font-weight: 800;
+    margin-bottom: 2px;
+}
+
+.rubrosTooltipMeta {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-bottom: 8px;
+}
+
+.rubrosTooltipTopLabel {
+    font-size: 10px;
+    color: #64748b;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.rubrosTooltipTxRow {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    gap: 8px;
+    margin-bottom: 2px;
+}
+
+.rubrosTooltipTxDesc {
+    color: #cbd5e1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 110px;
+}
+
+.rubrosTooltipTxAmount {
+    color: #f8fafc;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.rubrosLegend {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.rubrosLegendRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    border-radius: 10px;
+    transition: background 0.2s;
+    cursor: default;
+}
+
+.rubrosLegendRowActive {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.rubrosLegendLeft {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.rubrosLegendDot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.rubrosLegendName {
+    font-size: 12px;
+    color: #cbd5e1;
+    font-weight: 500;
+}
+
+.rubrosLegendRight {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.rubrosLegendPct {
+    font-size: 11px;
+    color: #64748b;
+}
+
+.rubrosLegendAmount {
+    font-size: 13px;
+    font-weight: 700;
+    color: #f8fafc;
+}
+
+.cellTransition {
+    cursor: pointer;
+    transition: opacity 0.2s;
+}

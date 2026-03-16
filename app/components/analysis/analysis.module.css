@@ -15,6 +15,18 @@
     }
 }
 
+.sideColumn {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.gridTwoCols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
 .panel {
     background: var(--background-alt);
     border: 1px solid var(--border-light);
@@ -61,6 +73,49 @@
     gap: var(--space-4);
 }
 
+.debtInfoGrid {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.debtInfoRow {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+}
+
+.debtInfoLabel {
+    color: var(--text-muted);
+}
+
+.debtInfoValue {
+    font-weight: 600;
+}
+
+.debtInfoValueDanger {
+    font-weight: 600;
+    color: var(--danger);
+}
+
+.debtWarning {
+    color: var(--danger);
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 8px;
+}
+
+.emptyPayments {
+    padding: 20px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
 .gaugeContainer {
     position: relative;
     width: 160px;
@@ -84,7 +139,7 @@
     border-radius: 50%;
     border: 16px solid var(--primary);
     clip-path: inset(0 0 50% 0);
-    transform: rotate(calc(var(--ratio-deg, 0deg)));
+    transform: rotate(-90deg);
     transition: transform 1s ease-out;
 }
 

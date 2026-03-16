@@ -268,8 +268,8 @@
     height: 40px;
     border-radius: var(--radius-lg);
     border: 1px solid var(--border-light);
-    background: transparent;
-    color: var(--text-secondary);
+    background: var(--background-alt);
+    color: var(--text-primary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -287,6 +287,24 @@
     background: var(--primary) !important;
     color: white !important;
     border-color: var(--primary) !important;
+}
+
+.themeBtn {
+    width: auto;
+    padding: 0 12px;
+    gap: 6px;
+    color: var(--text-secondary);
+}
+
+.themeBtn:hover {
+    color: var(--primary);
+}
+
+.themeBtnLabel {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
 }
 
 .primaryBtn:hover {
@@ -401,7 +419,7 @@
     background: linear-gradient(90deg, var(--primary), var(--primary-dark));
     border-radius: var(--radius-full);
     transition: width 0.5s ease;
-    width: var(--progress-width, 0%);
+    width: 0%;
 }
 
 .infoBox {
@@ -440,7 +458,6 @@
 .tooltipEntry {
     margin: 0;
     line-height: 1.4;
-    color: var(--entry-color, inherit);
 }
 
 /* Fix backdrop filter ordering */
