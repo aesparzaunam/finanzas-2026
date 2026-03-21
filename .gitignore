@@ -47,3 +47,5 @@ next-env.d.ts
 .firebase/
 firebase-debug.log*
 .firebase-admin.json.json
+temp_config.json
+temp_config_utf8.json
