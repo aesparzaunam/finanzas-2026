@@ -20,8 +20,8 @@ export async function GET() {
             const txSnap = await txRef.where('msiPlanId', '==', plan.id).get();
             const txs = txSnap.docs.map(d => ({ id: d.id, ...d.data() }));
             // Sort in memory to avoid requiring a Firestore composite index (msiPlanId, date)
-            txs.sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
-            (plan as any).transactions = txs;
+            txs.sort((a, b) => new Date((a as unknown as { date: string }).date).getTime() - new Date((b as unknown as { date: string }).date).getTime());
+            (plan as Record<string, unknown>).transactions = txs;
         }
 
         return NextResponse.json(msiPlans);
@@ -53,9 +53,8 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Missing required fields: totalAmount, months, accountId' }, { status: 400 });
         }
 
-        const validMonths = [3, 6, 9, 12, 18, 24];
-        if (!validMonths.includes(months)) {
-            return NextResponse.json({ error: 'Invalid MSI months. Must be 3, 6, 9, 12, 18, or 24' }, { status: 400 });
+        if (!Number.isInteger(months) || months < 3 || months > 48) {
+            return NextResponse.json({ error: 'Invalid MSI months. Must be between 3 and 48' }, { status: 400 });
         }
 
         const accountRef = db.collection('users').doc(userId).collection('accounts').doc(accountId);
@@ -170,11 +169,11 @@ export async function PUT(request: Request) {
             return NextResponse.json({ error: 'MSI plan not found' }, { status: 404 });
         }
 
-        const updateData: any = {
+        const updateData: Record<string, string | null> = {
             updatedAt: new Date().toISOString()
         };
         if (description !== undefined) updateData.description = description;
-        if (categoryId !== undefined) updateData.categoryId = categoryId;
+        if (categoryId !== undefined) updateData.categoryId = categoryId ?? null;
 
         await db.runTransaction(async (transaction) => {
             transaction.update(msiPlanRef, updateData);

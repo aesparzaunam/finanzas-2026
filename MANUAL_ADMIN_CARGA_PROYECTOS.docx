@@ -1,0 +1,303 @@
+# 📋 Manual de Uso para Administrador
+## Sistema de Gestión de Proyectos — Carga de Nuevos Proyectos
+
+**Versión:** 1.0 · **Fecha:** Marzo 2026 · **Audiencia:** Administradores del sistema
+
+---
+
+> [!IMPORTANT]
+> Este manual aplica únicamente a usuarios con rol **Administrador** o superior. Los usuarios con rol `READONLY` no tienen acceso al formulario de creación.
+
+---
+
+## 1. Requisitos Previos
+
+Antes de registrar un nuevo proyecto, asegúrese de contar con:
+
+| Requisito | Descripción |
+|---|---|
+| **Acceso de administrador** | Su cuenta debe tener rol `ADMIN` o `SUPER_ADMIN` en el sistema |
+| **Sesión activa** | Haber iniciado sesión con su cuenta institucional (Google) |
+| **Información del proyecto** | Nombre, entidad, rubro, responsable y conceptos presupuestados |
+| **Montos por concepto** | El presupuesto total se calcula automáticamente de los conceptos |
+
+---
+
+## 2. Acceder al Formulario de Nuevo Proyecto
+
+### Paso 1 — Ir al módulo de Proyectos
+
+1. En la barra lateral izquierda, haga clic en **📋 Proyectos**
+2. Se mostrará la lista de proyectos existentes con filtros y tabla
+
+### Paso 2 — Iniciar la creación
+
+En la esquina superior derecha del encabezado, haga clic en el botón:
+
+```
+➕ Nuevo Proyecto
+```
+
+> [!NOTE]
+> Este botón **solo es visible** para usuarios con rol de administrador. Si no lo ve, su cuenta no tiene los permisos necesarios.
+
+---
+
+## 3. Formulario de Creación — Pestañas
+
+El formulario está organizado en **5 pestañas** que se completan de izquierda a derecha:
+
+```
+[Datos Generales] → [Conceptos del Proyecto] → [Documentación Soporte] → [Costo del Proyecto] → [Firmas]
+```
+
+Puede navegar entre pestañas con los botones **← Anterior** y **Siguiente →** ubicados al final de cada sección, o haciendo clic directamente en el nombre de la pestaña.
+
+---
+
+## 4. Pestaña 1 — Datos Generales
+
+Esta es la primera pestaña y contiene la información de identificación principal del proyecto.
+
+### Campos disponibles
+
+| Campo | Tipo | Obligatorio | Descripción |
+|---|---|---|---|
+| **Entidad** | Búsqueda | ✅ Sí | Institución o dependencia solicitante del proyecto |
+| **Rubro** | Desplegable | ✅ Sí | Clasificación presupuestal del proyecto |
+| **Nombre del Proyecto** | Texto | ✅ Sí | Título descriptivo del proyecto |
+| **Año** | Desplegable | ✅ Sí | Ejercicio fiscal (2024–2028) |
+| **Área Solicitante** | Desplegable | No | Dirección o área que solicita el proyecto |
+| **Responsable** | Texto | ✅ Sí | Nombre completo del responsable del proyecto |
+| **Líder de Proyecto / Depto.** | Texto | No | Aparece en la cédula del proyecto |
+| **Prioridad** | Desplegable | No | 🔴 Alta / 🟡 Media / 🟢 Baja |
+| **Fecha Elaboración** | Fecha | No | Fecha de elaboración de la cédula |
+| **Descripción** | Texto largo | No | Descripción detallada del proyecto |
+| **Requerimientos** | Texto largo | No | Necesidades técnicas, logísticas o administrativas |
+| **Comentarios / Datos duros** | Texto largo | No | Aparece en la sección "Datos duros > Comentarios" de la cédula |
+
+### Cómo buscar y seleccionar la Entidad
+
+1. Haga clic en el campo **Entidad**
+2. Escriba el nombre, abreviatura o número de ID de la entidad
+3. Se mostrará una lista desplegable con los resultados
+4. Haga clic en la entidad deseada para seleccionarla
+
+> [!TIP]
+> Puede buscar por número de ID, nombre completo o abreviatura. El sistema muestra el ID en dorado, la abreviatura en negritas y el nombre completo.
+
+### Cómo seleccionar el Rubro
+
+Los rubros disponibles dependen de su rol en el sistema. Seleccione el número de rubro que corresponde al tipo de proyecto:
+
+- El sistema mostrará únicamente los rubros a los que tiene acceso según su perfil
+
+### Al finalizar esta pestaña
+
+Haga clic en **Siguiente: Conceptos →** o en la pestaña **Conceptos del Proyecto** para continuar.
+
+---
+
+## 5. Pestaña 2 — Conceptos del Proyecto
+
+Esta pestaña permite registrar los componentes o partidas presupuestales del proyecto.
+
+### Agregar un concepto
+
+1. Haga clic en el botón **+ Agregar Concepto** (esquina superior derecha de la sección)
+2. Se mostrará un bloque con los campos del concepto
+
+### Campos por concepto
+
+| Campo | Descripción |
+|---|---|
+| **Concepto del catálogo** | Seleccione del catálogo de conceptos vigentes. Al elegir uno, el nombre se rellena automáticamente |
+| **Monto Asignado ($)** | Presupuesto en pesos mexicanos (MXN) para este concepto |
+| **Procedimiento de Adquisición** | Forma de contratación aplicable según el monto |
+
+### Procedimientos de Adquisición disponibles
+
+| Procedimiento | Cuándo aplica (referencia general) |
+|---|---|
+| **Adjudicación directa** | Montos menores, bienes o servicios de disponibilidad inmediata |
+| **Cuadro comparativo** | Montos intermedios con comparación de al menos 3 cotizaciones |
+| **Invitación a 3 personas** | Contratos de mediano alcance |
+| **Licitación pública** | Contratos de mayor cuantía conforme a normativa UNAM |
+
+> [!TIP]
+> El sistema muestra una **sugerencia automática** del procedimiento según la tabla de adquisiciones UNAM basada en el monto total del proyecto.
+
+### Eliminar un concepto
+
+Haga clic en el botón **🗑️ Eliminar** ubicado en la esquina inferior derecha de cada bloque de concepto.
+
+### Presupuesto calculado
+
+Al final de la lista de conceptos se muestra el **presupuesto total calculado** como la suma de todos los montos ingresados. Este valor se actualiza en tiempo real.
+
+---
+
+## 6. Pestaña 3 — Documentación Soporte
+
+Esta pestaña permite registrar el avance documental y comentarios para cada concepto definido.
+
+> [!NOTE]
+> Esta pestaña **requiere** que existan conceptos agregados en la pestaña anterior. Si no hay conceptos, se mostrará un mensaje indicando que debe agregarlos primero.
+
+### Campos por concepto
+
+| Campo | Descripción |
+|---|---|
+| **Anexo Técnico** | Marque si este concepto requiere anexo técnico |
+| **Instructivo de Cotización** | Marque si requiere instructivo de cotización |
+| **Estudio de Mercado** | Marque si requiere estudio de mercado |
+| **Avance documental (0–100)** | Porcentaje de avance en la documentación soporte. Muestra una barra de progreso visual |
+| **Comentarios** | Observaciones sobre el estado de la documentación |
+
+### Interpretación de la barra de avance
+
+La barra de progreso de color azul refleja visualmente el porcentaje de avance ingresado:
+
+- **0%** — Sin inicio
+- **1–49%** — En proceso
+- **50–99%** — Avanzado
+- **100%** — Completo
+
+---
+
+## 7. Pestaña 4 — Costo del Proyecto
+
+Esta pestaña muestra un **resumen de solo lectura** con el presupuesto total calculado.
+
+### Contenido de la tabla
+
+| Columna | Descripción |
+|---|---|
+| **Concepto** | Nombre del concepto del catálogo |
+| **Procedimiento** | Procedimiento de adquisición seleccionado |
+| **Monto** | Monto asignado en pesos MXN |
+
+Al final de la tabla se muestra la fila:
+
+```
+TOTAL AUTORIZADO A INVERTIR:   $X,XXX,XXX.XX
+```
+
+> [!NOTE]
+> Esta pestaña es informativa. Los montos solo pueden modificarse regresando a la pestaña **Conceptos del Proyecto**.
+
+---
+
+## 8. Pestaña 5 — Firmas (Informativo)
+
+Esta pestaña muestra la configuración de firmas que aparecerá en la cédula del proyecto según el **Área Solicitante** seleccionada.
+
+### Información mostrada
+
+| Dato | Descripción |
+|---|---|
+| **Área Solicitante** | Área seleccionada en Datos Generales |
+| **Coordinador Autoriza** | Nombre del coordinador que firma según la configuración del área |
+| **Puesto del Coordinador** | Cargo oficial |
+| **Logo a Mostrar** | Nombre del archivo de logo asignado al área |
+
+> [!NOTE]
+> Si el área seleccionada no tiene configuración específica, se aplicarán los valores predeterminados del sistema. Puede gestionar la configuración de áreas en el módulo **Administración > Áreas**.
+
+---
+
+## 9. Guardar el Proyecto
+
+Una vez completados los campos requeridos en todas las pestañas:
+
+### Paso final
+
+Haga clic en el botón ubicado en la parte inferior de la página:
+
+```
+💾 Guardar como Borrador
+```
+
+### ¿Qué sucede al guardar?
+
+1. **Validación del formulario** — El sistema verifica que los campos obligatorios estén completos
+2. **Creación en Firestore** — El proyecto se registra con estado `BORRADOR`
+3. **Sincronización con Google Drive** — Los datos del proyecto se exportan automáticamente al archivo Excel en Drive
+4. **Redirección** — Se redirige a la página de detalle del proyecto recién creado
+
+> [!WARNING]
+> Si la sincronización con Google Drive falla, el proyecto se **elimina automáticamente** (rollback) para evitar inconsistencias. En ese caso, vuelva a intentar la creación. Contacte al administrador técnico si el error persiste.
+
+### Si hay errores de validación
+
+Un mensaje en la parte superior del formulario indicará el problema. Los campos con error se resaltan en color **rojo**. Los campos obligatorios son:
+
+- ✅ Entidad
+- ✅ Rubro
+- ✅ Nombre del Proyecto
+- ✅ Responsable
+
+---
+
+## 10. Cancelar la Creación
+
+Si desea abandonar el formulario sin guardar, haga clic en el botón:
+
+```
+Cancelar
+```
+
+Esto lo redirigirá al listado de proyectos **sin guardar ningún dato**.
+
+---
+
+## 11. Después de Crear el Proyecto
+
+Una vez guardado como borrador, el proyecto aparecerá en el listado con estado **🟡 BORRADOR**.
+
+### Próximos pasos habituales
+
+| Acción | Descripción |
+|---|---|
+| **Revisar la cédula PDF** | Desde el detalle del proyecto, genere y revise el PDF |
+| **Actualizar avances** | Actualice los porcentajes de documentación conforme avance el proceso |
+| **Cambiar estado** | Un administrador puede cambiar el estado a `APROBADO` cuando corresponda |
+| **Editar el proyecto** | Desde la vista de detalle puede editar cualquier campo |
+
+---
+
+## 12. Errores Comunes y Soluciones
+
+| Error | Causa probable | Solución |
+|---|---|---|
+| `Hay errores en el formulario` | Campos obligatorios vacíos | Revise los campos en rojo en la pestaña **Datos Generales** |
+| `Usuario no autenticado` | Sesión expirada | Recargue la página e inicie sesión nuevamente |
+| `Entidad no válida` | No se seleccionó entidad del buscador | Haga clic en la entidad del desplegable en lugar de solo escribirla |
+| `Sincronización con Drive falló` | Problema de conectividad o permisos en Drive | Espere unos minutos e intente de nuevo; contacte al soporte técnico si persiste |
+| El botón **➕ Nuevo Proyecto** no aparece | Rol insuficiente | Solicite permisos de administrador al responsable del sistema |
+| La lista de Entidades no carga | Timeout en conexión | Recargue la página; si persiste, verifique conectividad |
+
+---
+
+## 13. Referencia Rápida — Campos Obligatorios
+
+```
+PESTAÑA 1 — DATOS GENERALES
+  [✅] Entidad           → Buscar y seleccionar del desplegable
+  [✅] Rubro             → Seleccionar del catálogo disponible
+  [✅] Nombre Proyecto   → Texto descriptivo
+  [✅] Responsable       → Nombre completo del responsable
+
+PESTAÑAS 2, 3, 4, 5 — Sin campos obligatorios
+  (Los conceptos son opcionales pero altamente recomendados)
+```
+
+---
+
+## 14. Soporte
+
+Para dudas técnicas o problemas de acceso, contacte al administrador del sistema.
+
+---
+
+*Manual generado para el Sistema de Gestión de Proyectos — UNAM · v1.0 · Marzo 2026*
