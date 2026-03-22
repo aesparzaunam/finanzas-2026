@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, ComponentType } from 'react';
 import LayoutShell from './components/dashboard/LayoutShell';
 import styles from './page.module.css';
-import { ChevronDown, Repeat, Wallet, CreditCard, MoreHorizontal } from 'lucide-react';
+import { ChevronDown, Repeat, Wallet, CreditCard, Upload } from 'lucide-react';
 import { useAuth } from '@/app/context/AuthProvider';
 import Link from 'next/link';
 import AnalysisDashboard from './components/analysis/AnalysisDashboard';
@@ -12,7 +12,6 @@ import RubrosDonutChart from './components/charts/RubrosDonutChart';
 import ArbitrageWidget from './components/charts/ArbitrageWidget';
 import DebtBurndownChart from './components/charts/DebtBurndownChart';
 import { StyledDiv } from './components/ui/StyledElements';
-
 
 
 interface DashboardMetrics {
@@ -50,6 +49,8 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState(6);
   const [patrimonyView, setPatrimonyView] = useState<PatrimonyView>('personal');
+  const [showImporter, setShowImporter] = useState(false);
+  const [importerData, setImporterData] = useState<{ accounts: {id:string;name:string;type:string}[]; categories: {id:string;name:string;icon:string;type:string}[] } | null>(null);
 
 
   useEffect(() => {
@@ -85,6 +86,34 @@ export default function Home() {
       setLoading(false);
     }
   }, [user, authLoading]);
+
+  // Carga accounts + categories solo cuando el usuario abre el importer
+  const handleOpenImporter = async () => {
+    if (!importerData) {
+      const [accsRes, catsRes] = await Promise.all([
+        fetch('/api/accounts'),
+        fetch('/api/categories'),
+      ]);
+      const [accs, cats] = await Promise.all([accsRes.json(), catsRes.json()]);
+      setImporterData({
+        accounts: Array.isArray(accs) ? accs : [],
+        categories: Array.isArray(cats) ? cats : [],
+      });
+    }
+    setShowImporter(true);
+  };
+
+  const handleImportComplete = () => {
+    setShowImporter(false);
+    // Refresca movimientos recientes
+    fetch('/api/transactions?limit=15')
+      .then(r => r.json())
+      .then(tData => {
+        if (Array.isArray(tData)) {
+          setTransactions(tData.filter((tx: Transaction) => !tx.isParent).slice(0, 7));
+        }
+      });
+  };
 
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(val);
@@ -133,6 +162,7 @@ export default function Home() {
 
 
   return (
+    <>
     <LayoutShell>
       <div className={styles.pageContainer}>
         {/* Balance Card Section */}
@@ -176,7 +206,10 @@ export default function Home() {
         {/* Activity Analysis Chart */}
         <section className={styles.sectionBlock}>
           <div className={styles.sectionHeader}>
-            <h2 className={styles.sectionTitle}>Análisis de Actividad</h2>
+            <div>
+              <h2 className={styles.sectionTitle}>Análisis de Actividad</h2>
+              <p className={styles.sectionDesc}>Comparativa de ingresos vs gastos por mes. Cada barra representa el gasto relativo al periodo máximo.</p>
+            </div>
             <div className={styles.filterContainer}>
               <select 
                 className={styles.rangeSelect} 
@@ -245,19 +278,25 @@ export default function Home() {
           <div className={styles.intelligenceLabel}>
             🚀 Inteligencia Financiera
           </div>
+          <p className={styles.intelligenceDesc}>
+            Análisis avanzado de tu situación financiera. Detecta oportunidades, visualiza tus hábitos de gasto y proyecta el pago de tus deudas.
+          </p>
 
           {/* 4A: Widget de Arbitraje */}
           <div className={styles.intelligenceWidgetBlock}>
+            <p className={styles.widgetDesc}>💡 <strong>Arbitraje:</strong> Compara el costo de tu deuda (CAT) vs el rendimiento de tus inversiones. Si el CAT supera el rendimiento, conviene liquidar deuda primero.</p>
             <ArbitrageWidget />
           </div>
 
           {/* 4B: Donut Chart de Rubros */}
           <div className={styles.intelligenceWidgetBlock}>
+            <p className={styles.widgetDesc}>🍩 <strong>Gastos por Rubro:</strong> Distribución de tus gastos del mes por categoría. Identifica en qué rubros se concentra tu gasto para tomar mejores decisiones.</p>
             <RubrosDonutChart />
           </div>
 
           {/* 4C: Debt Burn-Down Chart */}
           <div className={styles.intelligenceWidgetBlock}>
+            <p className={styles.widgetDesc}>📉 <strong>Proyección de Deuda:</strong> Simula cuánto tiempo tardarías en liquidar una deuda con pagos mínimos vs pagos adicionales. Ajusta el deslizador para ver el impacto de cada peso extra.</p>
             <DebtBurndownChart />
           </div>
         </section>
@@ -281,17 +320,24 @@ export default function Home() {
              </div>
              <span className={styles.actionLabel}>Tarjetas</span>
           </Link>
-          <button className={styles.actionBtn} aria-label="Más acciones">
+          <button
+            className={styles.actionBtn}
+            aria-label="Importar estado de cuenta"
+            onClick={handleOpenImporter}
+          >
             <div className={`${styles.actionIconBox} ${styles.purple}`}>
-              <MoreHorizontal size={24} />
+              <Upload size={24} />
             </div>
-            <span className={styles.actionLabel}>Más</span>
+            <span className={styles.actionLabel}>Importar</span>
           </button>
         </div>
 
         {/* Recent Transactions */}
         <div className={styles.recentHeader}>
-          <h2 className={`${styles.sectionTitle} ${styles.noMargin}`}>Movimientos Recientes</h2>
+          <div>
+            <h2 className={`${styles.sectionTitle} ${styles.noMargin}`}>Movimientos Recientes</h2>
+            <p className={styles.sectionDesc}>Tus últimos movimientos registrados. Haz clic en &quot;Ver todos&quot; para filtrar, buscar o importar estados de cuenta.</p>
+          </div>
           <Link href="/transactions" className={styles.viewAll}>Ver todos</Link>
         </div>
         
@@ -337,5 +383,27 @@ export default function Home() {
 
       </div>
     </LayoutShell>
+
+    {/* ── Statement Importer Modal ── */}
+    {showImporter && importerData && (
+      <StatementImporterLazy
+        accounts={importerData!.accounts}
+        categories={importerData!.categories}
+        onImportComplete={handleImportComplete}
+        onClose={() => setShowImporter(false)}
+      />
+    )}
+    </>
   );
+}
+
+// Lazy-load para no bloquear el TTI del dashboard
+function StatementImporterLazy(props: { accounts: {id:string;name:string;type:string}[]; categories: {id:string;name:string;icon:string;type:string}[]; onImportComplete: () => void; onClose: () => void; }) {
+  type Comp = ComponentType<{ accounts: {id:string;name:string;type:string}[]; categories: {id:string;name:string;icon:string;type:string}[]; onImportComplete: () => void; onClose: () => void; }>;
+  const [Component, setComponent] = useState<Comp | null>(null);
+  useEffect(() => {
+    import('./components/StatementImporter').then(m => setComponent(() => m.default as Comp));
+  }, []);
+  if (!Component) return null;
+  return <Component {...props} />;
 }

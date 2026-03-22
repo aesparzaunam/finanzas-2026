@@ -487,3 +487,35 @@
 .intelligenceWidgetBlock {
     margin-bottom: 16px;
 }
+
+/* ── Section & widget descriptions ── */
+.sectionDesc {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 2px 0 0;
+    line-height: 1.5;
+}
+
+.intelligenceDesc {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: -6px 0 16px;
+    line-height: 1.5;
+    padding-left: 2px;
+}
+
+.widgetDesc {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin: 0 0 10px;
+    padding: 8px 12px;
+    background: var(--background);
+    border-left: 3px solid var(--primary);
+    border-radius: 0 8px 8px 0;
+}
+
+.widgetDesc strong {
+    color: var(--text-secondary);
+    font-weight: 700;
+}

@@ -15,7 +15,7 @@ export default function AnalysisDashboard() {
         timeline: TimelinePoint[];
         debtRatio: DebtRatioData;
         hormiga: HormigaAnalysis[];
-        upcoming: any[];
+        upcoming: { id: string; name: string; amount: number; nextDate: string | Date; frequency?: string; categoryId?: string | null; accountId?: string; startDate?: string; status?: string }[];
     } | null>(null);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
@@ -89,7 +89,7 @@ export default function AnalysisDashboard() {
                             Añadir
                         </button>
                     </div>
-                    <UpcomingPayments payments={data.upcoming} />
+                    <UpcomingPayments payments={data.upcoming} onRefresh={fetchData} />
                 </div>
             </div>
 

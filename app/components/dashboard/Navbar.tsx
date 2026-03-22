@@ -131,15 +131,15 @@ export default function Navbar() {
                                 </div>
                             </Link>
 
-                            <div className={`${menuStyles.menuGridItem} ${menuStyles.itemDisabled}`}>
+                            <Link href="/transactions" className={menuStyles.menuGridItem} onClick={() => setMenuOpen(false)}>
                                 <div className={`${menuStyles.menuActionIcon} ${menuStyles.iconSlate}`}>
                                     <FileText size={24} />
                                 </div>
                                 <div>
-                                    <div className={menuStyles.menuGridItemTitle}>Reportes</div>
-                                    <div className={menuStyles.menuGridItemDesc}>Próximamente</div>
+                                    <div className={menuStyles.menuGridItemTitle}>Movimientos</div>
+                                    <div className={menuStyles.menuGridItemDesc}>Historial completo</div>
                                 </div>
-                            </div>
+                            </Link>
                         </div>
                     </div>
                 </div>

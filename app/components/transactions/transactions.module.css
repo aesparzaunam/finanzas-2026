@@ -21,6 +21,33 @@
     justify-content: flex-end;
 }
 
+.headerActions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.importBtn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(99,102,241,0.3);
+}
+
+.importBtn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(99,102,241,0.45);
+}
+
 .tableContainer {
     background: var(--background-alt);
     border-radius: var(--radius-xl);
@@ -352,3 +379,220 @@
         transform: translateY(0);
     }
 }
+
+/* ── CRUD: table rows & action buttons ── */
+.tableRow {
+    transition: background var(--transition-fast);
+}
+
+.tableRow:hover {
+    background: var(--background);
+}
+
+.actionsCell {
+    white-space: nowrap;
+    text-align: center;
+    width: 80px;
+}
+
+.editBtn,
+.deleteBtn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 15px;
+    padding: 4px 6px;
+    border-radius: 6px;
+    transition: background 0.15s, transform 0.15s;
+    line-height: 1;
+    opacity: 0.6;
+}
+
+.editBtn:hover  { background: rgba(59,130,246,.12); opacity: 1; transform: scale(1.1); }
+.deleteBtn:hover { background: rgba(239,68,68,.12);  opacity: 1; transform: scale(1.1); }
+
+/* ── type badge inline ── */
+.typeBadge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: var(--border-light);
+    color: var(--text-secondary);
+}
+
+.typeBadge.income  { background: rgba(16,185,129,.1);  color: #10b981; }
+.typeBadge.expense { background: rgba(239,68,68,.1);   color: #ef4444; }
+.typeBadge.transfer { background: rgba(59,130,246,.1); color: #3b82f6; }
+
+/* ── Edit modal header ── */
+.modalHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-5);
+}
+
+.modalTitle {
+    font-size: var(--text-xl);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.modalCloseBtn {
+    background: var(--border-light);
+    border: none;
+    border-radius: 8px;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-muted);
+    transition: all 0.2s;
+}
+.modalCloseBtn:hover { background: var(--border-default); color: var(--text-primary); }
+
+/* ── Delete confirmation box ── */
+.confirmBox {
+    background: var(--background-alt);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-8);
+    max-width: 360px;
+    width: 100%;
+    text-align: center;
+    box-shadow: var(--shadow-xl);
+    animation: slideUp 0.25s ease;
+}
+
+.confirmIcon { font-size: 40px; margin-bottom: 12px; }
+
+.confirmTitle {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 8px;
+}
+
+.confirmText {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin: 0 0 24px;
+}
+
+.confirmBtns {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.confirmCancelBtn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: 1px solid var(--border-light);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.confirmCancelBtn:hover { background: var(--border-light); color: var(--text-primary); }
+
+.confirmDeleteBtn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    background: #ef4444;
+    color: white;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.confirmDeleteBtn:hover:not(:disabled) { background: #dc2626; transform: translateY(-1px); }
+.confirmDeleteBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── #12 Category autocomplete banner ── */
+.catSuggestionBanner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+    padding: 7px 10px;
+    background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.06));
+    border: 1px solid rgba(99,102,241,0.2);
+    border-radius: 8px;
+    animation: fadeIn 0.2s ease;
+    font-size: 13px;
+}
+
+.catSuggestionIcon { font-size: 14px; flex-shrink: 0; }
+
+.catSuggestionText {
+    flex: 1;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.catSuggestionText strong {
+    color: var(--text-primary);
+}
+
+.catSuggestionAccept {
+    padding: 3px 10px;
+    background: #6366f1;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.catSuggestionAccept:hover { background: #4f46e5; }
+
+.catSuggestionDismiss {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 14px;
+    padding: 0 2px;
+    line-height: 1;
+    flex-shrink: 0;
+    transition: color 0.15s;
+}
+.catSuggestionDismiss:hover { color: var(--text-primary); }
+
+/* ── #7 Tags column in table ── */
+.tagsCell {
+    min-width: 120px;
+}
+
+/* ── Tags edit section in modal ── */
+.tagEditSection {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    border-top: 1px solid var(--border-light);
+    padding-top: 16px;
+}
+
+.tagEditLabel {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}

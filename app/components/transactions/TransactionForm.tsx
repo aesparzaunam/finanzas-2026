@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import styles from './transactions.module.css';
 import formStyles from '../accounts/accounts.module.css';
+import { useCategoryAutocomplete } from './useCategoryAutocomplete';
 
 interface Account {
     id: string;
@@ -19,6 +20,15 @@ interface Category {
 }
 
 interface TransactionFormProps {
+    initialValues?: {
+        description?: string;
+        amount?: string;
+        type?: string;
+        accountId?: string;
+        categoryId?: string;
+        date?: string;
+        toAccountId?: string;
+    };
     onCheckSubmit: (data: {
         description: string;
         amount: string;
@@ -29,20 +39,32 @@ interface TransactionFormProps {
         toAccountId?: string;
     }) => Promise<void>;
     onCancel: () => void;
+    submitLabel?: string;
 }
 
-export default function TransactionForm({ onCheckSubmit, onCancel }: TransactionFormProps) {
-    const [description, setDescription] = useState('');
-    const [amount, setAmount] = useState('');
-    const [type, setType] = useState('EXPENSE');
-    const [accountId, setAccountId] = useState('');
-    const [categoryId, setCategoryId] = useState('');
-    const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-    const [toAccountId, setToAccountId] = useState('');
+export default function TransactionForm({ initialValues, onCheckSubmit, onCancel, submitLabel }: TransactionFormProps) {
+    const [description, setDescription] = useState(initialValues?.description || '');
+    const [amount, setAmount] = useState(initialValues?.amount || '');
+    const [type, setType] = useState(initialValues?.type || 'EXPENSE');
+    const [accountId, setAccountId] = useState(initialValues?.accountId || '');
+    const [categoryId, setCategoryId] = useState(initialValues?.categoryId || '');
+    const [date, setDate] = useState(initialValues?.date || new Date().toISOString().split('T')[0]);
+    const [toAccountId, setToAccountId] = useState(initialValues?.toAccountId || '');
 
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [submitting, setSubmitting] = useState(false);
+
+    // ── #12 Autocompletado de Categorías ────────────────────────
+    const { suggestions: catSuggestions, acceptSuggestion, dismiss: dismissSuggestion } = useCategoryAutocomplete(
+        description,
+        categoryId,
+        {
+            onSelect: (id) => setCategoryId(id),
+        }
+    );
+    // Solo mostrar sugerencias cuando el tipo usa categoría
+    const showCatSuggestion = catSuggestions.length > 0 && type !== 'TRANSFER' && type !== 'PAGO_TARJETA';
 
     useEffect(() => {
         fetch('/api/accounts').then(res => res.json()).then(setAccounts);
@@ -147,7 +169,32 @@ export default function TransactionForm({ onCheckSubmit, onCancel }: Transaction
                         onChange={e => setDescription(e.target.value)}
                         placeholder="ej. Supermercado, Nómina, etc."
                         required
+                        autoComplete="off"
                     />
+                    {/* ── Sugerencia de categoría ── */}
+                    {showCatSuggestion && (
+                        <div className={styles.catSuggestionBanner}>
+                            <span className={styles.catSuggestionIcon}>🤖</span>
+                            <span className={styles.catSuggestionText}>
+                                ¿Categoría <strong>{catSuggestions[0].categoryIcon} {catSuggestions[0].categoryName}</strong>?
+                            </span>
+                            <button
+                                type="button"
+                                className={styles.catSuggestionAccept}
+                                onClick={() => acceptSuggestion(catSuggestions[0].categoryId)}
+                            >
+                                Usar
+                            </button>
+                            <button
+                                type="button"
+                                className={styles.catSuggestionDismiss}
+                                onClick={dismissSuggestion}
+                                aria-label="Ignorar sugerencia"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {/* Amount */}
@@ -249,7 +296,7 @@ export default function TransactionForm({ onCheckSubmit, onCancel }: Transaction
                 {/* Buttons */}
                 <div className={styles.buttonGroup}>
                     <button type="submit" className={styles.buttonPrimary} disabled={submitting}>
-                        {submitting ? 'Guardando...' : 'Guardar Movimiento'}
+                        {submitting ? 'Guardando...' : (submitLabel || 'Guardar Movimiento')}
                     </button>
                     <button type="button" className={styles.buttonSecondary} onClick={onCancel}>
                         Cancelar

@@ -8,6 +8,7 @@ import { useTheme } from "next-themes";
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import styles from "./dashboard.module.css";
+import NotificationCenter from "@/app/components/NotificationCenter";
 
 const navLinks = [
     { href: "/", label: "Inicio", icon: Home },
@@ -81,6 +82,9 @@ export default function Header() {
                             {mounted ? (isDark ? 'Claro' : 'Oscuro') : 'Tema'}
                         </span>
                     </button>
+                    
+                    {/* #10 Notification Center */}
+                    <NotificationCenter />
                     
                     <Link 
                         href="/transactions/new" 
