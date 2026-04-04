@@ -1,0 +1,414 @@
+/* ============================================
+   widgets.module.css — ForecastWidget, HealthScoreWidget
+   Antigravity Kinetic Void design system
+   ============================================ */
+
+/* ── ForecastWidget ────────────────────────── */
+.forecast {
+  background: linear-gradient(135deg, var(--surface-container-low) 0%, var(--surface-container) 100%);
+  border-radius: 20px;
+  padding: 24px;
+  color: var(--on-surface);
+  grid-column: span 2;
+  border-top: 1px solid rgba(146,170,255,0.08);
+}
+
+.forecastLoading {
+  background: var(--surface-container-low);
+  border-radius: 20px;
+  padding: 24px;
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.forecastLoadingText {
+  color: var(--on-surface-variant);
+  font-size: 13px;
+}
+
+.forecastHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.forecastLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.6;
+  margin-bottom: 4px;
+}
+
+.forecastTotal {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.forecastSubLabel {
+  font-size: 12px;
+  opacity: 0.65;
+  margin-top: 2px;
+}
+
+.forecastSavingsPositive {
+  text-align: right;
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: rgba(91,240,131,0.1);
+  /* No border per No-Line rule — tonal bg only */
+}
+
+.forecastSavingsNegative {
+  text-align: right;
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: rgba(255,110,132,0.1);
+}
+
+.forecastSavingsLabel {
+  font-size: 11px;
+  color: var(--on-surface-variant);
+  margin-bottom: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+}
+
+.forecastSavingsPositiveAmt {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--tertiary-dim);
+  letter-spacing: -0.02em;
+}
+
+.forecastSavingsNegativeAmt {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--error);
+  letter-spacing: -0.02em;
+}
+
+.forecastSummaryBar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--surface-container-high);
+}
+
+.forecastSummaryItem {
+  flex: 1;
+  text-align: center;
+}
+
+.forecastSummaryDivider {
+  width: 1px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.forecastSummaryItemLabel {
+  font-size: 11px;
+  opacity: 0.55;
+}
+
+.forecastSummaryItemValue {
+  font-size: 15px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.forecastToggleBtn {
+  width: 100%;
+  background: var(--surface-container-high);
+  border: none;
+  border-radius: 12px;
+  padding: 10px 14px;
+  color: var(--on-surface-variant);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.2s;
+}
+
+.forecastToggleBtn:hover {
+  background: var(--surface-bright);
+}
+
+.forecastCatList {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.forecastCatRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--surface-container);
+  transition: background 0.3s, transform 0.3s;
+}
+
+.forecastCatRow:hover {
+  background: var(--surface-container-high);
+  transform: translateY(-2px);
+}
+
+.forecastCatLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.forecastCatName { font-size: 13px; }
+
+.forecastCatRight { text-align: right; }
+.forecastCatAmt { font-size: 13px; font-weight: 600; }
+
+.forecastTrendUp   { font-size: 11px; color: var(--error); font-weight: 700; }
+.forecastTrendDown { font-size: 11px; color: var(--tertiary-dim); font-weight: 700; }
+.forecastTrendFlat { font-size: 11px; color: var(--on-surface-variant); }
+
+.forecastEmptyNote {
+  padding: 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 12px;
+  opacity: 0.65;
+  text-align: center;
+}
+
+/* ── HealthScoreWidget ─────────────────────── */
+.health {
+  border-radius: 20px;
+  padding: 24px;
+  color: var(--on-surface);
+}
+
+.healthLight {
+  background: var(--surface-container-low);
+  /* No border per No-Line rule */
+}
+
+.healthDark {
+  background: var(--surface-container-low);
+  border-top: 1px solid rgba(146,170,255,0.07);
+}
+
+.healthLoading {
+  border-radius: 20px;
+  padding: 24px;
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.healthLoadingLight { background: var(--surface-container-low); }
+.healthLoadingDark  { background: var(--surface-container-low); }
+
+.healthLoadingTextLight { color: rgba(0,0,0,0.25); font-size: 13px; }
+.healthLoadingTextDark  { color: rgba(255,255,255,0.3); font-size: 13px; }
+
+/* ── Sin datos (usuario nuevo) ── */
+.healthNoData {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  gap: 8px;
+  text-align: center;
+}
+
+.healthNoDataIcon {
+  font-size: 32px;
+  opacity: 0.5;
+}
+
+.healthNoDataTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--on-surface);
+}
+
+.healthNoDataHint {
+  font-size: 12px;
+  color: var(--on-surface-variant);
+  line-height: 1.5;
+  max-width: 200px;
+}
+
+
+.healthSectionLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 16px;
+}
+
+.healthSectionLabelLight { opacity: 0.45; color: #111; }
+.healthSectionLabelDark  { opacity: 0.5;  color: #fff; }
+
+.healthTop {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 16px;
+}
+
+.healthArcWrap { position: relative; flex-shrink: 0; }
+
+.healthScoreNum {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--level-color, #6366f1);
+}
+
+.healthLevelName {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: var(--level-color, #6366f1);
+}
+
+.healthLevelSub {
+  font-size: 12px;
+}
+
+.healthLevelSubLight { opacity: 0.55; color: #111; }
+.healthLevelSubDark  { opacity: 0.55; color: #fff; }
+
+.healthEarnedIcons {
+  font-size: 18px;
+  margin-top: 6px;
+  letter-spacing: 2px;
+}
+
+.healthBarTrack {
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.healthBarTrackLight { background: rgba(0,0,0,0.08); }
+.healthBarTrackDark  { background: rgba(255,255,255,0.08); }
+
+.healthBarFill {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--level-color, #6366f1) 67%, transparent), var(--level-color, #6366f1));
+  transition: width 1.2s ease;
+}
+
+.healthDetailBtn {
+  width: 100%;
+  background: transparent;
+  border-radius: 8px;
+  padding: 7px 12px;
+  cursor: pointer;
+  font-size: 12px;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+}
+
+.healthDetailBtnLight { border: 1px solid rgba(0,0,0,0.1); color: rgba(0,0,0,0.55); }
+.healthDetailBtnDark  { border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.55); }
+
+.healthSubScores {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.subBarRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.subBarLabel { font-size: 12px; min-width: 110px; }
+.subBarLabelLight { color: rgba(0,0,0,0.55); }
+.subBarLabelDark  { color: rgba(255,255,255,0.55); }
+
+.subBarTrack {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.subBarTrackLight { background: rgba(0,0,0,0.08); }
+.subBarTrackDark  { background: rgba(255,255,255,0.1); }
+
+.subBarFill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--bar-color, #6366f1);
+  transition: width 1s ease;
+}
+
+.subBarVal { font-size: 11px; min-width: 30px; text-align: right; }
+.subBarValLight { opacity: 0.5; color: #111; }
+.subBarValDark  { opacity: 0.6; color: #fff; }
+
+.subBarWeight { font-size: 10px; min-width: 28px; }
+.subBarWeightLight { opacity: 0.35; color: #111; }
+.subBarWeightDark  { opacity: 0.4;  color: #fff; }
+
+.healthBadgeList {
+  margin-top: 14px;
+  padding-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.healthBadgeListLight { border-top: 1px solid rgba(0,0,0,0.08); }
+.healthBadgeListDark  { border-top: 1px solid rgba(255,255,255,0.08); }
+
+.healthBadgePill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: var(--radius-full);
+  background: rgba(146,170,255,0.12);
+  /* Ghost border instead of solid */
+  border: 1px solid rgba(146,170,255,0.15);
+  font-size: 12px;
+}
+
+.healthBadgeLabel { opacity: 0.85; }
+.healthBadgeLabelLight { color: #111; }
+.healthBadgeLabelDark  { color: #fff; }
+
+.healthNextBadge {
+  margin-top: 10px;
+  font-size: 11px;
+  text-align: center;
+}
+
+.healthNextLight { opacity: 0.4; color: #111; }
+.healthNextDark  { opacity: 0.45; color: #fff; }

@@ -19,7 +19,7 @@ const jetbrainsMono = JetBrains_Mono({
 // Viewport — controla el tema de la barra de estado y deshabilita
 // el zoom automático en inputs móviles (UX crítico para formularios)
 export const viewport: Viewport = {
-  themeColor: '#6366f1',
+  themeColor: '#3c6bed',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
@@ -48,7 +48,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={`${inter.variable} ${jetbrainsMono.variable}`}>
+      <body className={`${inter.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <AuthProvider>
             {children}

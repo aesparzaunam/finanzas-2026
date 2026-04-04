@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import styles from './StatementImporter.module.css';
 
 interface ParsedTransaction {
@@ -69,9 +69,22 @@ export default function StatementImporter({ accounts, categories, onImportComple
   const [msiTx, setMsiTx] = useState<{ tx: ParsedTransaction; idx: number } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // AbortController para cancelar si el usuario cierra o tarda demasiado
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Limpieza al desmontar
+  useEffect(() => {
+    return () => { abortControllerRef.current?.abort(); };
+  }, []);
+
   const handleFile = useCallback(async (file: File) => {
     setError(null);
     setIsLoading(true);
+
+    // Timeout extendido: 150 s para inferencia local (modelo 27B puede tardar)
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    const timeoutId = setTimeout(() => controller.abort(), 150_000);
 
     try {
       const formData = new FormData();
@@ -80,17 +93,19 @@ export default function StatementImporter({ accounts, categories, onImportComple
       const res = await fetch('/api/import-statement', {
         method: 'POST',
         body: formData,
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error procesando archivo');
 
       setImportResult(data);
-      // Si Gemini detectó la cuenta correcta, pre-seleccionarla
+      // Si la IA detectó la cuenta correcta, pre-seleccionarla
       if (data.suggestedAccountId) {
         setSelectedAccountId(data.suggestedAccountId);
       }
-      // Select all rows by default
+      // Seleccionar todas las filas por defecto
       const selections: Record<number, boolean> = {};
       const cats: Record<number, string> = {};
       data.transactions.forEach((tx: ParsedTransaction, i: number) => {
@@ -101,7 +116,12 @@ export default function StatementImporter({ accounts, categories, onImportComple
       setRowCategories(cats);
       setStep('preview');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Error procesando archivo');
+      clearTimeout(timeoutId);
+      if ((err as { name?: string }).name === 'AbortError') {
+        setError('La solicitud tardó demasiado. Asegúrate de que Ollama está corriendo y el modelo está descargado.');
+      } else {
+        setError(err instanceof Error ? err.message : 'Error procesando archivo');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -232,8 +252,9 @@ export default function StatementImporter({ accounts, categories, onImportComple
               {isLoading ? (
                 <div className={styles.loadingState}>
                   <div className={styles.spinner} />
-                  <p>Analizando estado de cuenta…</p>
-                  <span>Esto puede tomar unos segundos con PDFs</span>
+                  <p>Analizando documento con IA local…</p>
+                  <span>⏳ Esto puede tomar 1-2 minutos mientras el modelo procesa el documento.</span>
+                  <span className={styles.loadingModelHint}>Ollama · {process.env.NEXT_PUBLIC_LOCAL_LLM_MODEL || 'qwen-claude'}</span>
                 </div>
               ) : (
                 <>
@@ -266,8 +287,8 @@ export default function StatementImporter({ accounts, categories, onImportComple
             </div>
 
             <p className={styles.hint}>
-              💡 Para PDFs se usa <strong>Gemini AI</strong> para extraer los movimientos automáticamente.
-              Para CSV/Excel se detecta el banco por las columnas.
+              💡 Todos los formatos (PDF, CSV, Excel) se procesan con <strong>IA Local (Ollama)</strong>.
+              Los PDFs escaneados usan OCR automático como respaldo.
             </p>
           </div>
         )}
@@ -284,7 +305,7 @@ export default function StatementImporter({ accounts, categories, onImportComple
                 <span>{bankInfo.emoji}</span>
                 <strong className={styles.bankNameText}>{bankInfo.name}</strong>
                 <span className={styles.sourceBadge}>
-                  {importResult.source === 'pdf_ai' ? '🤖 Gemini AI' : importResult.source === 'csv' ? '📋 CSV' : '📊 Excel'}
+                  {importResult.source === 'pdf_ai' ? '🤖 IA Local' : importResult.source === 'csv' ? '📋 CSV' : '📊 Excel'}
                 </span>
               </div>
               <div className={styles.statsRow}>
@@ -317,7 +338,7 @@ export default function StatementImporter({ accounts, categories, onImportComple
                 </select>
                 {importResult.suggestedAccountId && importResult.suggestedAccountId === selectedAccountId && (
                   <div className={styles.accountDetectedHint}>
-                    🤖 Gemini detectó esta cuenta automáticamente
+                    🤖 IA Local detectó esta cuenta automáticamente
                   </div>
                 )}
               </div>
@@ -390,7 +411,7 @@ export default function StatementImporter({ accounts, categories, onImportComple
                             ))}
                           </select>
                           {tx.suggestedCategory && !rowCategories[i] && (
-                            <div className={styles.suggestionHint}>🤖 {tx.suggestedCategory}</div>
+                            <div className={styles.suggestionHint}>🧠 {tx.suggestedCategory}</div>
                           )}
                           {tx.isMSI && (
                             <button
@@ -521,7 +542,7 @@ function MsiCreateModal({
         </div>
 
         <p className={styles.msiModalHint}>
-          🤖 Gemini detectó un cargo a meses. Revisa los datos y confirma.
+          🤖 La IA detectó un cargo a meses sin intereses. Revisa los datos y confirma.
         </p>
 
         <div className={styles.msiFormGroup}>

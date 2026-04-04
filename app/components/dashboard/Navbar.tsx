@@ -3,143 +3,198 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, BarChart2, CreditCard, LayoutTemplate, PieChart, Plus, Menu, X, LogOut, FileText } from "lucide-react";
+import {
+    Home, CreditCard, BarChart2, PieChart,
+    LayoutTemplate, Plus, Menu, X, LogOut,
+    FileText, Settings, Sparkles,
+} from "lucide-react";
 import { useAuth } from "@/app/context/AuthProvider";
-import styles from "./dashboard.module.css";
-import menuStyles from "./menu.module.css";
+import styles from "./shell.module.css";
 
-const linksLeft = [
-    { href: "/", label: "Inicio", icon: Home },
-    { href: "/accounts", label: "Tarjetas", icon: CreditCard },
+// ── Desktop sidebar navigation items ──────────────────────────
+const SIDEBAR_ITEMS = [
+    { href: "/",             label: "Inicio",       icon: Home },
+    { href: "/accounts",     label: "Cuentas",      icon: CreditCard },
+    { href: "/transactions", label: "Historial",    icon: BarChart2 },
+    { href: "/budgets",      label: "Presupuestos", icon: PieChart },
+    { href: "/msi",          label: "MSI",          icon: LayoutTemplate },
+    { href: "/insights",     label: "Insights IA",  icon: Sparkles },
 ];
 
-const linksRight = [
+// ── Mobile bottom bar items ───────────────────────────────────
+const BOTTOM_LEFT  = [
+    { href: "/",         label: "Inicio",   icon: Home },
+    { href: "/accounts", label: "Cuentas",  icon: CreditCard },
+];
+const BOTTOM_RIGHT = [
     { href: "/transactions", label: "Historial", icon: BarChart2 },
 ];
+
+// ── Menu sheet items (all routes) ─────────────────────────────
+const MENU_ITEMS = [
+    { href: "/budgets",      label: "Presupuestos", desc: "Control de gastos",   icon: PieChart,       color: "#5bf083" },
+    { href: "/msi",          label: "MSI",          desc: "Pagos sin intereses",  icon: LayoutTemplate, color: "#92aaff" },
+    { href: "/accounts",     label: "Cuentas",      desc: "Saldos y tarjetas",    icon: CreditCard,     color: "#3c6bed" },
+    { href: "/transactions", label: "Movimientos",  desc: "Historial completo",   icon: FileText,       color: "#a3aac4" },
+    { href: "/insights",     label: "Insights IA",  desc: "Análisis inteligente", icon: Sparkles,       color: "#c084fc" },
+];
+
 
 export default function Navbar() {
     const pathname = usePathname();
     const { logout } = useAuth();
     const [menuOpen, setMenuOpen] = useState(false);
 
+    const isActive = (href: string) =>
+        href === "/" ? pathname === "/" : pathname.startsWith(href);
+
+    // ── Desktop sidebar link ─────────────────────────────────
+    const SidebarLink = ({ href, label, icon: Icon }: { href: string; label: string; icon: typeof Home }) => {
+        const active = isActive(href);
+        return (
+            <Link
+                href={href}
+                className={active ? styles.sidebarLinkActive : styles.sidebarLink}
+                aria-current={active ? "page" : undefined}
+            >
+                <Icon size={18} strokeWidth={active ? 2.5 : 1.8} className={styles.sidebarLinkIcon} />
+                {label}
+            </Link>
+        );
+    };
+
+    // ── Mobile bottom tab link ───────────────────────────────
+    const TabLink = ({ href, label, icon: Icon }: { href: string; label: string; icon: typeof Home }) => {
+        const active = isActive(href);
+        return (
+            <Link href={href} className={`${styles.tabLink} ${active ? styles.tabLinkActiveDark : styles.tabLinkDark}`}>
+                <Icon size={22} strokeWidth={active ? 2.5 : 1.8} />
+                <span className={`${styles.tabLabel} ${active ? styles.tabLabelActive : ""}`}>{label}</span>
+            </Link>
+        );
+    };
+
     return (
         <>
-
-            
-
-            {/* Mobile Bottom Tab Bar */}
-            <div className={styles.mobileNavWrapper}>
-                <nav className={styles.mobileNav}>
-                    <div className={styles.navSection}>
-                        {linksLeft.map((l) => {
-                            const active = pathname === l.href || (pathname.startsWith('/transactions') && l.label === 'Movimientos');
-                            const Icon = l.icon;
-                            return (
-                                <Link
-                                    key={l.href}
-                                    href={l.href}
-                                    className={`${styles.mobileNavItem} ${active ? styles.mobileNavItemActive : ""}`}
-                                >
-                                    <Icon size={24} className={styles.mobileNavIcon} strokeWidth={active ? 2.5 : 2} />
-                                    <span className={styles.mobileNavLabel}>{l.label}</span>
-                                </Link>
-                            );
-                        })}
+            {/* ═══════════════════════════════════════════
+                DESKTOP SIDEBAR
+            ═══════════════════════════════════════════ */}
+            <aside className={styles.sidebar}>
+                <div className={styles.sidebarLogoWrap}>
+                    <div className={styles.sidebarLogo}>
+                        <span className={styles.sidebarLogoAccent}>⬡</span>
+                        Antigravity
                     </div>
-                    
-                    <div className={styles.fabWrapper}>
-                        <Link href="/transactions/new" className={styles.fabButton} aria-label="Add transaction">
-                            <Plus size={28} color="white" />
-                        </Link>
-                    </div>
+                </div>
 
-                    <div className={styles.navSection}>
-                        {linksRight.map((l) => {
-                            const active = pathname.startsWith(l.href);
-                            const Icon = l.icon;
-                            return (
-                                <Link
-                                    key={l.href}
-                                    href={l.href}
-                                    className={`${styles.mobileNavItem} ${active ? styles.mobileNavItemActive : ""}`}
-                                >
-                                    <Icon size={24} className={styles.mobileNavIcon} strokeWidth={active ? 2.5 : 2} />
-                                    <span className={styles.mobileNavLabel}>{l.label}</span>
-                                </Link>
-                            );
-                        })}
-                        {/* Custom Menu Toggle Button */}
-                        <button 
-                            className={`${styles.mobileNavItem} ${menuOpen ? styles.mobileNavItemActive : ""} ${menuStyles.btnTransparent}`}
-                            onClick={() => setMenuOpen(!menuOpen)}
-                            aria-label="Abrir Menú"
-                            title="Abrir Menú"
-                        >
-                            <Menu size={24} className={styles.mobileNavIcon} strokeWidth={menuOpen ? 2.5 : 2} />
-                            <span className={styles.mobileNavLabel}>Menú</span>
-                        </button>
-                    </div>
+                <nav className={styles.sidebarNav}>
+                    {SIDEBAR_ITEMS.map(item => (
+                        <SidebarLink key={item.href} {...item} />
+                    ))}
                 </nav>
-            </div>
 
+                <div className={styles.sidebarBottom}>
+                    <Link href="/transactions/new" className={styles.sidebarLink} aria-label="Nueva Transacción">
+                        <Plus size={18} strokeWidth={2} />
+                        Nueva Transacción
+                    </Link>
+                    <Link href="/settings" className={isActive('/settings') ? styles.sidebarLinkActive : styles.sidebarLink} aria-label="Ajustes" aria-current={isActive('/settings') ? 'page' : undefined}>
+                        <Settings size={18} strokeWidth={1.8} />
+                        Ajustes
+                    </Link>
+                    <button
+                        onClick={() => logout()}
+                        className={styles.sidebarLogoutBtn}
+                        aria-label="Cerrar Sesión"
+                    >
+                        <LogOut size={16} strokeWidth={1.8} />
+                        Cerrar Sesión
+                    </button>
+                </div>
+            </aside>
+
+            {/* ═══════════════════════════════════════════
+                MOBILE BOTTOM BAR
+            ═══════════════════════════════════════════ */}
+            <nav className={`${styles.mobileBar} ${styles.mobileBarDark}`} aria-label="Navegación principal">
+                {BOTTOM_LEFT.map(l => <TabLink key={l.href} {...l} />)}
+
+                {/* FAB */}
+                <Link href="/transactions/new" aria-label="Nueva Transacción" className={styles.fab}>
+                    <Plus size={26} strokeWidth={2.5} />
+                </Link>
+
+                {BOTTOM_RIGHT.map(l => <TabLink key={l.href} {...l} />)}
+
+                {/* More button */}
+                <button
+                    onClick={() => setMenuOpen(true)}
+                    aria-label="Abrir Menú"
+                    aria-expanded={menuOpen}
+                    className={`${styles.tabLink} ${menuOpen ? styles.tabLinkActiveDark : styles.tabLinkDark}`}
+                >
+                    <Menu size={22} strokeWidth={1.8} />
+                    <span className={styles.tabLabel}>Más</span>
+                </button>
+            </nav>
+
+            {/* ═══════════════════════════════════════════
+                SLIDE-UP MENU SHEET
+            ═══════════════════════════════════════════ */}
             {menuOpen && (
-                <div className={menuStyles.menuOverlay} onClick={() => setMenuOpen(false)}>
-                    <div className={menuStyles.menuSheet} onClick={e => e.stopPropagation()}>
-                        <div className={menuStyles.menuDragIndicator} />
-                        <div className={menuStyles.menuHeader}>
-                            <h2 className={menuStyles.menuTitle}>Menú</h2>
-                            <div className={menuStyles.headerActions}>
-                                <button className={menuStyles.logoutHeaderBtn} onClick={() => logout()} aria-label="Cerrar Sesión" title="Cerrar Sesión">
-                                    <LogOut size={18} strokeWidth={2.5} />
-                                    <span>Salir</span>
+                <div className={styles.menuOverlay} onClick={() => setMenuOpen(false)} role="dialog" aria-modal="true" aria-label="Menú principal">
+                    <div
+                        className={`${styles.menuSheet} ${styles.menuSheetDark}`}
+                        onClick={e => e.stopPropagation()}
+                    >
+                        {/* Drag handle */}
+                        <div className={styles.menuDragHandle} />
+
+                        {/* Header */}
+                        <div className={styles.menuSheetHeader}>
+                            <h2 className={styles.menuTitle}>Navegación</h2>
+                            <div className={styles.menuHeaderActions}>
+                                <button
+                                    onClick={() => { logout(); setMenuOpen(false); }}
+                                    className={styles.menuLogoutBtn}
+                                    aria-label="Cerrar Sesión"
+                                >
+                                    <LogOut size={13} /> Salir
                                 </button>
-                                <button className={menuStyles.closeBtn} onClick={() => setMenuOpen(false)} aria-label="Cerrar" title="Cerrar">
-                                    <X size={20} strokeWidth={2.5} />
-                                    <span>Cerrar</span>
+                                <button
+                                    onClick={() => setMenuOpen(false)}
+                                    aria-label="Cerrar Menú"
+                                    className={styles.menuCloseBtn}
+                                >
+                                    <X size={16} />
                                 </button>
                             </div>
                         </div>
 
-                        <div className={menuStyles.menuGrid}>
-                            <Link href="/budgets" className={menuStyles.menuGridItem} onClick={() => setMenuOpen(false)}>
-                                <div className={`${menuStyles.menuActionIcon} ${menuStyles.iconGreen}`}>
-                                    <PieChart size={24} />
-                                </div>
-                                <div>
-                                    <div className={menuStyles.menuGridItemTitle}>Presupuestos</div>
-                                    <div className={menuStyles.menuGridItemDesc}>Control de gastos</div>
-                                </div>
-                            </Link>
-
-                            <Link href="/msi" className={menuStyles.menuGridItem} onClick={() => setMenuOpen(false)}>
-                                <div className={`${menuStyles.menuActionIcon} ${menuStyles.iconOrange}`}>
-                                    <LayoutTemplate size={24} />
-                                </div>
-                                <div>
-                                    <div className={menuStyles.menuGridItemTitle}>MSI</div>
-                                    <div className={menuStyles.menuGridItemDesc}>Plazos sin intereses</div>
-                                </div>
-                            </Link>
-                            
-                             <Link href="/accounts" className={menuStyles.menuGridItem} onClick={() => setMenuOpen(false)}>
-                                <div className={`${menuStyles.menuActionIcon} ${menuStyles.iconBlue}`}>
-                                    <CreditCard size={24} />
-                                </div>
-                                <div>
-                                    <div className={menuStyles.menuGridItemTitle}>Cuentas</div>
-                                    <div className={menuStyles.menuGridItemDesc}>Saldos y tarjetas</div>
-                                </div>
-                            </Link>
-
-                            <Link href="/transactions" className={menuStyles.menuGridItem} onClick={() => setMenuOpen(false)}>
-                                <div className={`${menuStyles.menuActionIcon} ${menuStyles.iconSlate}`}>
-                                    <FileText size={24} />
-                                </div>
-                                <div>
-                                    <div className={menuStyles.menuGridItemTitle}>Movimientos</div>
-                                    <div className={menuStyles.menuGridItemDesc}>Historial completo</div>
-                                </div>
-                            </Link>
+                        {/* Menu grid */}
+                        <div className={styles.menuGrid}>
+                            {MENU_ITEMS.map(item => {
+                                const Icon = item.icon;
+                                return (
+                                    <Link
+                                        key={item.href}
+                                        href={item.href}
+                                        onClick={() => setMenuOpen(false)}
+                                        className={styles.menuGridItem}
+                                    >
+                                        <div
+                                            className={styles.menuItemIcon}
+                                            style={{ '--item-color': item.color } as React.CSSProperties}
+                                        >
+                                            <Icon size={22} />
+                                        </div>
+                                        <div className={styles.menuItemText}>
+                                            <div className={styles.menuItemTitle}>{item.label}</div>
+                                            <div className={styles.menuItemDesc}>{item.desc}</div>
+                                        </div>
+                                    </Link>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>

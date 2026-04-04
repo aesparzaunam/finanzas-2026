@@ -519,3 +519,11 @@
     color: var(--text-secondary);
     font-weight: 700;
 }
+
+/* ── Fase 4 widgets grid ── */
+.phase4Grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}

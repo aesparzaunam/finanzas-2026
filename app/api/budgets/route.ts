@@ -1,246 +1,129 @@
+import { getUserId } from '@/app/lib/api-utils';
 import { NextResponse } from 'next/server';
-import { db } from '@/app/lib/firebase';
-import { cookies } from 'next/headers';
+import { getBudgets, upsertBudget, deleteBudget, getBudgetById, getCategories } from '@/app/lib/db';
 
-// Helper to get number from string
-function toNumber(val: string | number): number {
-    return Number(val) || 0;
-}
+function toNumber(v: unknown): number { return Number(v) || 0; }
+
+function pad(n: number) { return String(n).padStart(2, '0'); }
 
 export async function GET() {
+    const userId = await getUserId();
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
     try {
-        const cookieStore = await cookies();
-        const userId = cookieStore.get('userId')?.value;
-
-        if (!userId) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
-        const budgetsRef = db.collection('users').doc(userId).collection('budgets');
-        const budgetSnap = await budgetsRef.get();
-        const budgets = budgetSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-        const catRef = db.collection('users').doc(userId).collection('categories');
-        const catSnap = await catRef.get();
-        const categories = new Map(catSnap.docs.map(doc => [doc.id, doc.data()]));
-
-        // Attach category metadata
-        budgets.forEach((b: any) => {
-            if (b.categoryId && categories.has(b.categoryId)) {
-                b.category = categories.get(b.categoryId);
-            }
-        });
-
+        const budgets = await getBudgets(userId);
+        const categories = await getCategories(userId);
+        const catMap = new Map(categories.map(c => [c.id, c]));
         const now = new Date();
 
-        // Calculate spent and carry-over for each budget
-        const budgetsWithStatus = await Promise.all(budgets.map(async (budget: any) => {
-            let startDate: Date, endDate: Date, prevStartDate: Date, prevEndDate: Date;
+        // Import DB singleton for spend queries
+        const { default: Database } = await import('better-sqlite3');
+        const path = require('path');
+        const dbPath = (process.env.DATABASE_URL ?? '').replace('file:', '') ||
+            path.join(process.cwd(), 'prisma', 'finanzas.db');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const db: any = Database(dbPath);
 
-            if (budget.period === 'MONTHLY') {
-                startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-                endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
-                prevStartDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-                prevEndDate = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
-            } else {
-                startDate = new Date(now.getFullYear(), 0, 1);
-                endDate = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
-                prevStartDate = new Date(now.getFullYear() - 1, 0, 1);
-                prevEndDate = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59);
-            }
+        const result = budgets.map(budget => {
+            const period = budget.period;
+            const monthStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}`;
+            const yearStr  = `${now.getFullYear()}`;
+            const periodKey = period === 'MONTHLY' ? monthStr : yearStr;
 
-            let carryOver = toNumber(budget.carryOverAmount);
+            const fromDate = period === 'MONTHLY'
+                ? `${now.getFullYear()}-${pad(now.getMonth() + 1)}-01`
+                : `${now.getFullYear()}-01-01`;
+            const toDate = period === 'MONTHLY'
+                ? `${now.getFullYear()}-${pad(now.getMonth() + 1)}-31`
+                : `${now.getFullYear()}-12-31`;
+
+            const spent: number = db.prepare(
+                `SELECT COALESCE(SUM(amount),0) as s FROM NTransaction
+                 WHERE userId=? AND categoryId=? AND type IN ('EXPENSE','MSI_CHARGE')
+                 AND isParent=0 AND date >= ? AND date <= ?`
+            ).get(userId, budget.categoryId, fromDate, toDate)?.s ?? 0;
+
+            const carryOver = toNumber(budget.carryOverAmount);
             const budgetLimit = toNumber(budget.amount);
-
-            const periodStart = budget.period === 'MONTHLY'
-                ? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-                : `${now.getFullYear()}`;
-
-            let lastCalcDateStr = budget.lastCarryOverAt;
-            const lastCalcDate = lastCalcDateStr ? new Date(lastCalcDateStr) : null;
-            const lastCalc = lastCalcDate
-                ? (budget.period === 'MONTHLY'
-                    ? `${lastCalcDate.getFullYear()}-${String(lastCalcDate.getMonth() + 1).padStart(2, '0')}`
-                    : `${lastCalcDate.getFullYear()}`)
-                : null;
-
-            const transactionsRef = db.collection('users').doc(userId).collection('transactions')
-                .where('categoryId', '==', budget.categoryId)
-                .where('type', 'in', ['EXPENSE', 'MSI_CHARGE']);
-
-            if (budget.enableCarryOver && lastCalc !== periodStart) {
-                const prevSnap = await transactionsRef
-                    .where('date', '>=', prevStartDate.toISOString())
-                    .where('date', '<=', prevEndDate.toISOString())
-                    .get();
-
-                let prevSpent = 0;
-                prevSnap.docs.forEach((doc) => {
-                    const tx = doc.data();
-                    if (tx.type === 'EXPENSE' && !tx.isParent) {
-                        prevSpent += toNumber(tx.amount);
-                    } else if (tx.type === 'MSI_CHARGE') {
-                        prevSpent += toNumber(tx.amount);
-                    }
-                });
-
-                const prevAvailable = budgetLimit + carryOver - prevSpent;
-                carryOver = Math.max(0, prevAvailable);
-
-                await budgetsRef.doc(budget.id).update({
-                    carryOverAmount: carryOver,
-                    lastCarryOverAt: new Date().toISOString()
-                });
-            }
-
-            const currSnap = await transactionsRef
-                .where('date', '>=', startDate.toISOString())
-                .where('date', '<=', endDate.toISOString())
-                .get();
-
-            let spent = 0;
-            currSnap.docs.forEach((doc) => {
-                const tx = doc.data();
-                if (tx.type === 'EXPENSE' && !tx.isParent) {
-                    spent += toNumber(tx.amount);
-                } else if (tx.type === 'MSI_CHARGE') {
-                    spent += toNumber(tx.amount);
-                }
-            });
-
             const totalAvailable = budgetLimit + carryOver;
             const remaining = totalAvailable - spent;
-            const percentage = (spent / totalAvailable) * 100;
+            const percentage = totalAvailable > 0 ? (spent / totalAvailable) * 100 : 0;
 
             return {
                 ...budget,
-                amount: budgetLimit,
-                carryOverAmount: carryOver,
+                enableCarryOver: Boolean(budget.enableCarryOver),
+                category: catMap.get(budget.categoryId),
                 spent,
                 remaining,
                 totalAvailable,
-                percentage
+                percentage,
+                periodKey,
             };
-        }));
+        });
 
-        return NextResponse.json(budgetsWithStatus);
+        db.close();
+        return NextResponse.json(result);
     } catch (error) {
-        console.error('Failed to fetch budgets:', error);
+        console.error('GET Budgets:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
 
 export async function POST(request: Request) {
+    const userId = await getUserId();
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
     try {
-        const cookieStore = await cookies();
-        const userId = cookieStore.get('userId')?.value;
-
-        if (!userId) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
         const { categoryId, amount, period, enableCarryOver } = await request.json();
-
         if (!categoryId || !amount) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
-        const budgetsRef = db.collection('users').doc(userId).collection('budgets');
-        const existingSnap = await budgetsRef.where('categoryId', '==', categoryId).get();
-
-        if (!existingSnap.empty) {
-            return NextResponse.json({ error: 'Budget already exists for this category' }, { status: 400 });
-        }
-
-        const newBudgetRef = budgetsRef.doc();
-        const budgetData = {
-            id: newBudgetRef.id,
-            userId,
-            categoryId,
+        const budget = await upsertBudget(userId, categoryId, {
             amount: Number(amount),
             period: period || 'MONTHLY',
-            enableCarryOver: enableCarryOver !== false,
+            enableCarryOver: enableCarryOver !== false ? 1 : 0,
             carryOverAmount: 0,
-            lastCarryOverAt: null,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        };
-
-        await newBudgetRef.set(budgetData);
-
-        return NextResponse.json(budgetData, { status: 201 });
+        });
+        return NextResponse.json({ ...budget, enableCarryOver: Boolean(budget.enableCarryOver) }, { status: 201 });
     } catch (error) {
-        console.error('Failed to create budget:', error);
+        console.error('POST Budget:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
 
 export async function PUT(request: Request) {
+    const userId = await getUserId();
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
     try {
-        const cookieStore = await cookies();
-        const userId = cookieStore.get('userId')?.value;
-
-        if (!userId) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
         const { id, amount, period, enableCarryOver } = await request.json();
+        if (!id) return NextResponse.json({ error: 'Budget ID is required' }, { status: 400 });
 
-        if (!id) {
-            return NextResponse.json({ error: 'Budget ID is required' }, { status: 400 });
-        }
+        const existing = await getBudgetById(id, userId);
+        if (!existing) return NextResponse.json({ error: 'Budget not found' }, { status: 404 });
 
-        const budgetRef = db.collection('users').doc(userId).collection('budgets').doc(id);
-        const doc = await budgetRef.get();
-
-        if (!doc.exists) {
-            return NextResponse.json({ error: 'Budget not found' }, { status: 404 });
-        }
-
-        const updateData: any = {
-            updatedAt: new Date().toISOString()
-        };
-        if (amount !== undefined) updateData.amount = Number(amount);
-        if (period !== undefined) updateData.period = period;
-        if (enableCarryOver !== undefined) updateData.enableCarryOver = enableCarryOver;
-
-        await budgetRef.update(updateData);
-
-        return NextResponse.json({ id, ...doc.data(), ...updateData });
+        const updated = await upsertBudget(userId, existing.categoryId, {
+            amount: amount !== undefined ? Number(amount) : existing.amount,
+            period: period !== undefined ? period : existing.period,
+            enableCarryOver: enableCarryOver !== undefined ? (enableCarryOver ? 1 : 0) : existing.enableCarryOver,
+        });
+        return NextResponse.json({ ...updated, enableCarryOver: Boolean(updated.enableCarryOver) });
     } catch (error) {
-        console.error('Failed to update budget:', error);
+        console.error('PUT Budget:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
 
 export async function DELETE(request: Request) {
-    try {
-        const cookieStore = await cookies();
-        const userId = cookieStore.get('userId')?.value;
+    const userId = await getUserId();
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-        if (!userId) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    if (!id) return NextResponse.json({ error: 'Budget ID is required' }, { status: 400 });
 
-        const { searchParams } = new URL(request.url);
-        const id = searchParams.get('id');
-
-        if (!id) {
-            return NextResponse.json({ error: 'Budget ID is required' }, { status: 400 });
-        }
-
-        const budgetRef = db.collection('users').doc(userId).collection('budgets').doc(id);
-        const doc = await budgetRef.get();
-
-        if (!doc.exists) {
-            return NextResponse.json({ error: 'Budget not found' }, { status: 404 });
-        }
-
-        await budgetRef.delete();
-
-        return NextResponse.json({ success: true });
-    } catch (error) {
-        console.error('Failed to delete budget:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
-    }
+    const ok = await deleteBudget(id, userId);
+    if (!ok) return NextResponse.json({ error: 'Budget not found' }, { status: 404 });
+    return NextResponse.json({ success: true });
 }

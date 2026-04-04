@@ -1,0 +1,789 @@
+/* ============================================================
+   shell.module.css — Antigravity "Kinetic Void" Shell
+   LayoutShell, Header, Navbar
+   ============================================================ */
+
+/* ── LayoutShell ── */
+.shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+}
+
+.shellMain {
+  flex: 1;
+  padding-top: 64px;       /* header height */
+  padding-bottom: 80px;    /* mobile nav reserve */
+  overflow-x: hidden;
+}
+
+@media (min-width: 768px) {
+  .shellMain {
+    padding-left: 256px;   /* sidebar width */
+    padding-bottom: var(--space-8);
+  }
+}
+
+.shellContainer {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--space-6);
+}
+
+/* ── Loading Screen ── */
+.loadingScreen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  background-image:
+    radial-gradient(at 0% 0%, rgba(60,107,237,0.15) 0, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(91,240,131,0.06) 0, transparent 50%);
+}
+
+.loadingInner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-6);
+  color: var(--on-surface);
+}
+
+.loadingLogo {
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  color: var(--primary);
+}
+
+.loadingSpinner {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid rgba(146,170,255,0.15);
+  border-top-color: var(--primary);
+  animation: spin 0.8s linear infinite;
+}
+
+.loadingText {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--on-surface-variant);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================================
+   DESKTOP SIDEBAR — Fixed left panel
+   ============================================================ */
+.sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 256px;
+  background: var(--surface-container-low); /* #091328 in dark */
+  box-shadow: var(--sidebar-shadow, 40px 0 40px rgba(0,0,0,0.4));
+  z-index: 60;
+  display: none;
+  flex-direction: column;
+  padding: var(--space-8) var(--space-6);
+  gap: var(--space-2);
+  border-right: 1px solid rgba(64,72,93,0.12);
+}
+
+@media (min-width: 768px) {
+  .sidebar {
+    display: flex;
+  }
+}
+
+.sidebarLogoWrap {
+  margin-bottom: var(--space-10);
+}
+
+.sidebarLogo {
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: var(--on-surface);
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.sidebarLogoAccent {
+  color: var(--primary);
+}
+
+.sidebarNav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Sidebar nav link — default */
+.sidebarLink {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-xl);
+  /* Dark: muted white. Light: handled via CSS variable below */
+  color: var(--sidebar-link-inactive, rgba(222,229,255,0.4));
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  border-right: 3px solid transparent;
+}
+
+.sidebarLink:hover {
+  color: var(--sidebar-link-hover, var(--on-surface));
+  background: var(--surface-container-high);
+}
+
+/* Active sidebar link */
+.sidebarLinkActive {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-xl);
+  color: var(--sidebar-link-active, var(--primary));
+  background: var(--surface-container-high);
+  border-right: 3px solid var(--primary-dim);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+}
+
+.sidebarLinkIcon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.sidebarLink:hover .sidebarLinkIcon {
+  transform: translateX(2px);
+}
+
+.sidebarBottom {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: var(--space-6);
+  border-top: 1px solid rgba(64,72,93,0.2);
+  margin-top: var(--space-4);
+}
+
+.sidebarLogoutBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-xl);
+  background: transparent;
+  border: none;
+  color: rgba(255,110,132,0.5);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sidebarLogoutBtn:hover {
+  color: var(--error);
+  background: rgba(255,110,132,0.08);
+}
+
+/* ============================================================
+   TOP HEADER — Sticky glass bar
+   ============================================================ */
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-6);
+  gap: var(--space-4);
+  background: rgba(6,14,32,0.8);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(146,170,255,0.06);
+  box-shadow: 0 0 20px rgba(60,107,237,0.08);
+  transition: background 0.2s, border-color 0.2s;
+}
+
+@media (min-width: 768px) {
+  .header {
+    left: 256px; /* sidebar offsets header */
+  }
+}
+
+.headerLight {
+  background: rgba(244,246,251,0.9);
+  border-bottom-color: rgba(60,107,237,0.08);
+}
+
+.headerDark {
+  background: rgba(6,14,32,0.8);
+  border-bottom-color: rgba(146,170,255,0.06);
+}
+
+/* Mobile: show menu toggle, hide logo (sidebar has it on desktop) */
+.headerMenuBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-lg);
+  background: transparent;
+  border: none;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.headerMenuBtn:hover {
+  background: var(--surface-container-high);
+}
+
+@media (min-width: 768px) {
+  .headerMenuBtn {
+    display: none;
+  }
+}
+
+.headerTitle {
+  font-size: 1.1rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  color: var(--on-surface);
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+  .headerTitle {
+    display: none;
+  }
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+/* ── Header Icon Buttons — base ── */
+.headerIconBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  padding: 0;             /* ← NO padding so SVG has room */
+  border-radius: var(--radius-lg);
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, transform 0.15s;
+  position: relative;
+  text-decoration: none;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+.headerIconBtn:hover {
+  transform: translateY(-1px);
+}
+
+.headerIconBtn:active {
+  transform: scale(0.9);
+}
+
+/* Dark mode icon buttons — electric-white on dark glass */
+.headerIconBtnDark {
+  background: rgba(146,170,255,0.08);
+  color: #cad3ff;
+}
+
+.headerIconBtnDark:hover {
+  background: rgba(146,170,255,0.16);
+  color: #ffffff;
+}
+
+/* Light mode icon buttons — navy on light surface */
+.headerIconBtnLight {
+  background: rgba(60,107,237,0.08);
+  color: #2a3d7a;
+}
+
+.headerIconBtnLight:hover {
+  background: rgba(60,107,237,0.15);
+  color: #1b2d63;
+}
+
+/* Add Transaction — prominent filled circle */
+.headerAddBtn {
+  border-radius: 50%;
+  background: var(--primary);
+  color: #ffffff !important;
+  box-shadow: 0 2px 10px rgba(60,107,237,0.4);
+}
+
+.headerAddBtn:hover {
+  background: #5a84f5;
+  box-shadow: 0 4px 20px rgba(60,107,237,0.5);
+}
+
+/* Logout button tonal variants */
+
+.headerLogoutBtnDark {
+  background: rgba(255,110,132,0.08);
+  color: rgba(255,110,132,0.75);
+}
+
+.headerLogoutBtnDark:hover {
+  background: rgba(255,110,132,0.16);
+  color: #ff6e84;
+}
+
+.headerLogoutBtnLight {
+  background: rgba(192,20,60,0.07);
+  color: rgba(192,20,60,0.65);
+}
+
+.headerLogoutBtnLight:hover {
+  background: rgba(192,20,60,0.14);
+  color: #c0143c;
+}
+
+/* Notification dot — pulsing */
+.headerNotifDot {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 7px;
+  height: 7px;
+  background: var(--primary);
+  border-radius: 50%;
+  border: 2px solid var(--surface);
+  animation: pulseNotif 2.5s ease infinite;
+}
+
+@keyframes pulseNotif {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%       { transform: scale(1.3); opacity: 0.65; }
+}
+
+
+.headerAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary-dim), var(--primary));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--on-primary);
+  font-weight: 800;
+  font-size: 12px;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 1.5px solid rgba(146,170,255,0.3);
+  cursor: pointer;
+}
+
+.headerAvatarImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ============================================================
+   MOBILE BOTTOM NAV — Glass floating bar
+   ============================================================ */
+.mobileBar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  height: 72px;
+  background: rgba(9,19,40,0.85);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(146,170,255,0.07);
+  box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  padding: 0 var(--space-4);
+  padding-bottom: max(var(--space-4), env(safe-area-inset-bottom));
+  border-radius: 24px 24px 0 0;
+  transition: background 0.2s;
+}
+
+@media (min-width: 768px) {
+  .mobileBar {
+    display: none;
+  }
+}
+
+.mobileBarLight {
+  background: rgba(255,255,255,0.92);
+  border-top-color: rgba(60,107,237,0.1);
+}
+
+.mobileBarDark {
+  background: rgba(9,19,40,0.85);
+  border-top-color: rgba(146,170,255,0.07);
+}
+
+/* Tab link */
+.tabLink {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3px;
+  padding: 8px 16px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  flex: 1;
+  padding-bottom: 6px;
+}
+
+.tabLink:active {
+  transform: scale(0.88);
+}
+
+.tabLinkLight       { color: rgba(13,27,62,0.35); }
+.tabLinkDark        { color: rgba(222,229,255,0.4); }
+.tabLinkActiveLight { color: var(--primary-dim); }
+.tabLinkActiveDark  { color: var(--primary); }
+
+.tabLabel {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.tabLabelActive {
+  font-weight: 800;
+}
+
+/* FAB — Center add button */
+.fab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-2xl);
+  background: var(--primary);
+  color: var(--on-primary);
+  text-decoration: none;
+  box-shadow: var(--shadow-glow);
+  flex-shrink: 0;
+  margin-bottom: 8px;
+  transition: transform 0.2s ease, box-shadow 0.2s;
+}
+
+.fab:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 30px rgba(146,170,255,0.5);
+}
+
+.fab:active {
+  transform: scale(0.9);
+}
+
+/* ============================================================
+   MOBILE SLIDE-UP MENU SHEET
+   ============================================================ */
+.menuOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(6,14,32,0.7);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-end;
+  animation: fadeIn 0.2s ease;
+}
+
+.menuSheet {
+  width: 100%;
+  border-radius: 24px 24px 0 0;
+  padding: var(--space-4) var(--space-6) var(--space-10);
+  box-shadow: var(--shadow-float);
+  animation: slideUp 0.3s ease;
+  border-top: 1px solid rgba(146,170,255,0.1);
+}
+
+.menuSheetLight { background: var(--surface-container-low); }
+.menuSheetDark  { background: var(--surface-container-low); }
+
+.menuDragHandle {
+  width: 40px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--outline-variant);
+  margin: 0 auto var(--space-6);
+}
+
+.menuSheetHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-6);
+}
+
+.menuTitle {
+  font-size: 1.1rem;
+  font-weight: 900;
+  margin: 0;
+  letter-spacing: -0.02em;
+  color: var(--on-surface);
+}
+
+.menuHeaderActions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.menuLogoutBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-xl);
+  border: 1px solid rgba(255,110,132,0.25);
+  background: rgba(255,110,132,0.08);
+  color: var(--error);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.menuCloseBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-lg);
+  background: var(--surface-container-high);
+  cursor: pointer;
+  border: none;
+  color: var(--on-surface-variant);
+}
+
+/* Menu grid */
+.menuGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.menuGridItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-xl);
+  text-decoration: none;
+  background: var(--surface-container);
+  /* No borders per "No-Line" rule */
+  transition: all 0.3s ease;
+}
+
+.menuGridItem:hover {
+  background: var(--surface-container-high);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-rise);
+}
+
+.menuItemIcon {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--item-color, var(--primary));
+  background: color-mix(in srgb, var(--item-color, var(--primary)) 12%, transparent);
+}
+
+.menuItemText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.menuItemTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--on-surface);
+  letter-spacing: -0.01em;
+}
+
+.menuItemDesc {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--on-surface-variant);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ── Responsive rules ── */
+@media (min-width: 768px) {
+  .mobileBar   { display: none !important; }
+}
+
+@media (max-width: 767px) {
+  .mobileBar   { display: flex !important; }
+}
+
+/* ============================================================
+   LIGHT MODE GLOBAL OVERRIDES
+   When .light class is on html element (next-themes)
+   ============================================================ */
+
+/* Sidebar background + border */
+:global(.light) .sidebar {
+  background: #f0f3fa;
+  box-shadow: 4px 0 24px rgba(0,0,0,0.06);
+  border-right: 1px solid rgba(60,107,237,0.1);
+}
+
+/* Sidebar logo */
+:global(.light) .sidebarLogo {
+  color: #0a1628;
+}
+
+/* Sidebar links — inactive: dark text */
+:global(.light) .sidebarLink {
+  color: rgba(10,22,40,0.5);
+}
+
+:global(.light) .sidebarLink:hover {
+  color: #0a1628;
+  background: rgba(60,107,237,0.07);
+}
+
+/* Sidebar link — active */
+:global(.light) .sidebarLinkActive {
+  color: #3c6bed;
+  background: rgba(60,107,237,0.1);
+  border-right-color: #3c6bed;
+}
+
+/* Sidebar bottom divider */
+:global(.light) .sidebarBottom {
+  border-top-color: rgba(0,0,0,0.08);
+}
+
+/* Header in light mode */
+:global(.light) .header {
+  background: rgba(244,246,251,0.92);
+  border-bottom-color: rgba(60,107,237,0.1);
+  box-shadow: 0 1px 12px rgba(0,0,0,0.06);
+}
+
+:global(.light) .headerTitle {
+  color: #0a1628;
+}
+
+:global(.light) .headerIconBtn {
+  color: #3a4260;
+}
+
+:global(.light) .headerIconBtn:hover {
+  background: rgba(60,107,237,0.08);
+  color: #0a1628;
+}
+
+/* Mobile bottom bar in light mode */
+:global(.light) .mobileBar {
+  background: rgba(255,255,255,0.95);
+  border-top-color: rgba(60,107,237,0.1);
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+}
+
+/* Mobile tab links in light mode */
+:global(.light) .tabLinkDark {
+  color: rgba(10,22,40,0.4);
+}
+
+:global(.light) .tabLinkActiveDark {
+  color: #3c6bed;
+}
+
+/* Menu sheet in light mode */
+:global(.light) .menuSheet {
+  background: #ffffff;
+  border-top-color: rgba(60,107,237,0.1);
+}
+
+:global(.light) .menuTitle {
+  color: #0a1628;
+}
+
+:global(.light) .menuGridItem {
+  background: #f0f3fa;
+}
+
+:global(.light) .menuGridItem:hover {
+  background: #e4e8f3;
+}
+
+:global(.light) .menuDragHandle {
+  background: rgba(0,0,0,0.15);
+}
+
+/* Logout button in light mode */
+:global(.light) .sidebarLogoutBtn {
+  color: rgba(192,20,60,0.55);
+}
+
+:global(.light) .sidebarLogoutBtn:hover {
+  color: #c0143c;
+  background: rgba(192,20,60,0.08);
+}

@@ -1,64 +1,27 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/app/lib/firebase';
-import { getUserId, unauthorizedResponse, internalErrorResponse } from '@/app/lib/api-utils';
+import { cookies } from 'next/headers';
+import { getTransactions } from '@/app/lib/db';
 
-// PATCH /api/transactions/tags?id=<txId>  { tags: string[] }
-export async function PATCH(request: Request) {
-    try {
-        const userId = await getUserId();
-        if (!userId) return unauthorizedResponse();
-
-        const { searchParams } = new URL(request.url);
-        const id = searchParams.get('id');
-        if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
-
-        const { tags } = await request.json();
-        if (!Array.isArray(tags)) {
-            return NextResponse.json({ error: 'tags must be an array' }, { status: 400 });
-        }
-
-        // Sanitize: lowercase, no spaces, max 20 chars, max 10 tags
-        const cleaned = [...new Set(
-            tags
-                .map((t: string) => t.trim().toLowerCase().replace(/\s+/g, '-').slice(0, 20))
-                .filter(Boolean)
-        )].slice(0, 10);
-
-        const txRef = db.collection('users').doc(userId).collection('transactions').doc(id);
-        const doc = await txRef.get();
-        if (!doc.exists) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-
-        await txRef.update({ tags: cleaned, updatedAt: new Date().toISOString() });
-
-        return NextResponse.json({ id, tags: cleaned });
-    } catch (error) {
-        return internalErrorResponse('PATCH transaction tags', error);
-    }
-}
-
-// GET /api/transactions/tags  – devuelve todos los tags únicos del usuario
 export async function GET() {
+    const cookieStore = await cookies();
+    const userId = cookieStore.get('userId')?.value;
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
     try {
-        const userId = await getUserId();
-        if (!userId) return unauthorizedResponse();
-
-        const snapshot = await db
-            .collection('users')
-            .doc(userId)
-            .collection('transactions')
-            .where('tags', '!=', null)
-            .get();
-
-        const allTags = new Set<string>();
-        snapshot.docs.forEach(doc => {
-            const data = doc.data();
-            if (Array.isArray(data.tags)) {
-                data.tags.forEach((t: string) => allTags.add(t));
+        // Get all transaction tags (stored as JSON strings)
+        const { transactions } = await getTransactions(userId, { limit: 500 });
+        const tagSet = new Set<string>();
+        transactions.forEach(tx => {
+            if (tx.tags) {
+                try {
+                    const parsed = JSON.parse(tx.tags);
+                    if (Array.isArray(parsed)) parsed.forEach(t => tagSet.add(t));
+                } catch { /* ignore */ }
             }
         });
-
-        return NextResponse.json(Array.from(allTags).sort());
+        return NextResponse.json([...tagSet].sort());
     } catch (error) {
-        return internalErrorResponse('GET transaction tags', error);
+        console.error('GET tags:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }

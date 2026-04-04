@@ -24,15 +24,12 @@ export default function RecentTransactions() {
             .then(async res => {
                 if (res.ok) {
                     const data = await res.json();
-                    if (Array.isArray(data)) {
-                        // Filter out MSI parent transactions and take first 5
-                        const recent = data
-                            .filter((tx: Transaction) => !tx.isParent)
-                            .slice(0, 5);
-                        setTransactions(recent);
-                    } else {
-                        setTransactions([]);
-                    }
+                    // Support both legacy array and new paginated shape
+                    const txArray = Array.isArray(data) ? data : (data.transactions ?? []);
+                    const recent = txArray
+                        .filter((tx: Transaction) => !tx.isParent)
+                        .slice(0, 5);
+                    setTransactions(recent);
                 } else if (res.status === 401) {
                     setTransactions([]);
                 }
@@ -41,6 +38,7 @@ export default function RecentTransactions() {
             .catch(() => {
                 setLoading(false);
             });
+
     }, []);
 
     const formatCurrency = (amount: number) =>

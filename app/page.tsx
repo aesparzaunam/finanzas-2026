@@ -14,12 +14,13 @@ import DebtBurndownChart from './components/charts/DebtBurndownChart';
 import { StyledDiv } from './components/ui/StyledElements';
 
 
+
 interface DashboardMetrics {
     netWorth: number;
     cashFlow: number;
-    savingsRate: number;
+    savingsRate: number | null;
     runway: number;
-    dti: number;
+    dti: number | null;
     history: { month: string; income: number; expense: number }[];
     accountSummary?: {
       total: number;
@@ -29,6 +30,7 @@ interface DashboardMetrics {
       others: number;
     };
 }
+
 
 interface Transaction {
     id: string;
@@ -68,10 +70,9 @@ export default function Home() {
         
         if (txRes.ok) {
           const tData = await txRes.json();
-          if (Array.isArray(tData)) {
-            const recent = tData.filter((tx: Transaction) => !tx.isParent).slice(0, 7);
-            setTransactions(recent);
-          }
+          const txArray = Array.isArray(tData) ? tData : (tData.transactions ?? []);
+          const recent = txArray.filter((tx: Transaction) => !tx.isParent).slice(0, 7);
+          setTransactions(recent);
         }
       } catch (error) {
         console.error("Error fetching dashboard data", error);
@@ -109,10 +110,10 @@ export default function Home() {
     fetch('/api/transactions?limit=15')
       .then(r => r.json())
       .then(tData => {
-        if (Array.isArray(tData)) {
-          setTransactions(tData.filter((tx: Transaction) => !tx.isParent).slice(0, 7));
-        }
+        const txArray = Array.isArray(tData) ? tData : (tData.transactions ?? []);
+        setTransactions(txArray.filter((tx: Transaction) => !tx.isParent).slice(0, 7));
       });
+
   };
 
   const formatCurrency = (val: number) =>
@@ -331,6 +332,8 @@ export default function Home() {
             <span className={styles.actionLabel}>Importar</span>
           </button>
         </div>
+
+
 
         {/* Recent Transactions */}
         <div className={styles.recentHeader}>

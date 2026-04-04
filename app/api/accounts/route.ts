@@ -1,146 +1,79 @@
+import { getUserId } from '@/app/lib/api-utils';
 import { NextResponse } from 'next/server';
-import { db } from '@/app/lib/firebase';
-import { getUserId, unauthorizedResponse, missingFieldsResponse, internalErrorResponse, notFoundResponse } from '@/app/lib/api-utils';
-import { Account, AccountType } from '@/app/lib/types';
+import {
+    getAccounts, createAccount, getAccountById, updateAccount, deleteAccount
+} from '@/app/lib/db';
 
-// Force refresh: 2026-03-15 03:15:00
-
+// GET /api/accounts
 export async function GET() {
-    try {
-        const userId = await getUserId();
-        if (!userId) return unauthorizedResponse();
+    const userId = await getUserId();
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-        const snapshot = await db.collection('users').doc(userId).collection('accounts').orderBy('name', 'asc').get();
-        const accounts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-        return NextResponse.json(accounts);
-    } catch (error) {
-        return internalErrorResponse('GET Accounts', error);
-    }
+    const accounts = await getAccounts(userId);
+    // Convert SQLite integers (0/1) to booleans for frontend compatibility
+    return NextResponse.json(accounts.map(a => ({
+        ...a,
+        isDefault: Boolean(a.isDefault),
+        isShared: Boolean(a.isShared),
+        autoDetected: Boolean(a.autoDetected),
+    })));
 }
 
+// POST /api/accounts
 export async function POST(request: Request) {
+    const userId = await getUserId();
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
     try {
-        const userId = await getUserId();
-        if (!userId) return unauthorizedResponse();
-
-        const { name, type, balance, currency, billingDay, paymentDay, annualRate, minPayment, interestStartDate, isShared } = await request.json();
-
-        if (!name || !type || balance === undefined) {
-            return missingFieldsResponse(['name', 'type', 'balance']);
-        }
-
-        const validTypes: AccountType[] = ['BANK', 'CASH', 'CREDIT', 'INVESTMENT', 'LOAN'];
-        if (!validTypes.includes(type as AccountType)) {
-            return NextResponse.json({ error: 'Invalid account type' }, { status: 400 });
-        }
-
-        const accountRef = db.collection('users').doc(userId).collection('accounts').doc();
-        const accountData: Account = {
-            id: accountRef.id,
-            userId,
-            name,
-            type: type as AccountType,
-            balance: Number(balance),
-            currency: currency || 'MXN',
-            isShared: isShared === true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        };
-
-        if (type === 'CREDIT' || type === 'LOAN') {
-            if (billingDay !== undefined) accountData.billingDay = Number(billingDay);
-            if (paymentDay !== undefined) accountData.paymentDay = Number(paymentDay);
-            if (annualRate !== undefined) accountData.annualRate = Number(annualRate);
-            if (minPayment !== undefined) accountData.minPayment = Number(minPayment);
-            if (interestStartDate) accountData.interestStartDate = interestStartDate;
-            // Defaults CREDIT
-            if (type === 'CREDIT') {
-                accountData.billingDay = accountData.billingDay ?? 1;
-                accountData.paymentDay = accountData.paymentDay ?? 15;
-            }
-        }
-
-        await accountRef.set(accountData);
-        return NextResponse.json(accountData, { status: 201 });
+        const body = await request.json();
+        const account = await createAccount(userId, body);
+        return NextResponse.json({
+            ...account,
+            isDefault: Boolean(account.isDefault),
+            isShared: Boolean(account.isShared),
+            autoDetected: Boolean(account.autoDetected),
+        }, { status: 201 });
     } catch (error) {
-        return internalErrorResponse('POST Account', error);
+        console.error('Create account error:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
 
-
+// PUT /api/accounts?id=...
 export async function PUT(request: Request) {
+    const userId = await getUserId();
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const url = new URL(request.url);
+    const id = url.searchParams.get('id');
+    if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
+
     try {
-        const userId = await getUserId();
-        if (!userId) return unauthorizedResponse();
-
-        const data = await request.json();
-        const { id, name, type, balance, currency, billingDay, paymentDay, annualRate, minPayment, interestStartDate, isShared } = data;
-        if (!id) return missingFieldsResponse(['id']);
-
-        const accountRef = db.collection('users').doc(userId).collection('accounts').doc(id);
-        const doc = await accountRef.get();
-        if (!doc.exists) return notFoundResponse('Account');
-
-        if (type) {
-            const validTypes: AccountType[] = ['BANK', 'CASH', 'CREDIT', 'INVESTMENT', 'LOAN'];
-            if (!validTypes.includes(type as AccountType)) {
-                return NextResponse.json({ error: 'Invalid account type' }, { status: 400 });
-            }
-        }
-
-        const currentType = type || doc.data()?.type;
-        const updateData: Partial<Account> = {
-            updatedAt: new Date().toISOString()
-        };
-        if (name !== undefined) updateData.name = name;
-        if (type !== undefined) updateData.type = type as AccountType;
-        if (balance !== undefined) updateData.balance = Number(balance);
-        if (currency !== undefined) updateData.currency = currency;
-        if (isShared !== undefined) updateData.isShared = isShared === true;
-
-        if (currentType === 'CREDIT' || currentType === 'LOAN') {
-            if (billingDay !== undefined) updateData.billingDay = Number(billingDay);
-            if (paymentDay !== undefined) updateData.paymentDay = Number(paymentDay);
-            if (annualRate !== undefined) updateData.annualRate = Number(annualRate);
-            if (minPayment !== undefined) updateData.minPayment = Number(minPayment);
-            if (interestStartDate !== undefined) updateData.interestStartDate = interestStartDate || null;
-        }
-
-        await accountRef.update(updateData);
-        return NextResponse.json({ id, ...doc.data(), ...updateData });
+        const body = await request.json();
+        const account = await updateAccount(id, userId, body);
+        if (!account) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+        return NextResponse.json({
+            ...account,
+            isDefault: Boolean(account.isDefault),
+            isShared: Boolean(account.isShared),
+            autoDetected: Boolean(account.autoDetected),
+        });
     } catch (error) {
-        return internalErrorResponse('PUT Account', error);
+        console.error('Update account error:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
 
+// DELETE /api/accounts?id=...
 export async function DELETE(request: Request) {
-    try {
-        const userId = await getUserId();
-        if (!userId) return unauthorizedResponse();
+    const userId = await getUserId();
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-        const { searchParams } = new URL(request.url);
-        const id = searchParams.get('id');
-        if (!id) return missingFieldsResponse(['id']);
+    const url = new URL(request.url);
+    const id = url.searchParams.get('id');
+    if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
-        const accountRef = db.collection('users').doc(userId).collection('accounts').doc(id);
-        const doc = await accountRef.get();
-        if (!doc.exists) return notFoundResponse('Account');
-
-        const transactionSnap = await db.collection('users').doc(userId).collection('transactions')
-            .where('accountId', '==', id)
-            .limit(1)
-            .get();
-
-        if (!transactionSnap.empty) {
-            return NextResponse.json({
-                error: 'No se puede eliminar una cuenta con transacciones. Elimina primero las transacciones.'
-            }, { status: 400 });
-        }
-
-        await accountRef.delete();
-        return NextResponse.json({ success: true });
-    } catch (error) {
-        return internalErrorResponse('DELETE Account', error);
-    }
+    const ok = await deleteAccount(id, userId);
+    if (!ok) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    return NextResponse.json({ success: true });
 }

@@ -1,251 +1,195 @@
+import { getUserId } from '@/app/lib/api-utils';
 import { NextResponse } from 'next/server';
-import { db } from '@/app/lib/firebase';
-import { cookies } from 'next/headers';
+import {
+    getMsiPlans, getMsiPlanById, createMsiPlan, updateMsiPlan, deleteMsiPlan,
+    getAccountById, createTransaction, bulkCreateTransactions, cuid
+} from '@/app/lib/db';
 
+// GET /api/msi — returns all plans with their child transactions
 export async function GET() {
+    const userId = await getUserId();
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
     try {
-        const cookieStore = await cookies();
-        const userId = cookieStore.get('userId')?.value;
+        // Import DB for raw query of child transactions
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const path = require('path');
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const Database = require('better-sqlite3');
+        const dbPath = (process.env.DATABASE_URL ?? '').replace('file:', '') ||
+            path.join(process.cwd(), 'prisma', 'finanzas.db');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const db: any = Database(dbPath);
 
-        if (!userId) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
-        const msiPlansRef = db.collection('users').doc(userId).collection('msiPlans');
-        const snapshot = await msiPlansRef.orderBy('createdAt', 'desc').get();
-        const msiPlans = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-        const txRef = db.collection('users').doc(userId).collection('transactions');
-        for (const plan of msiPlans) {
-            const txSnap = await txRef.where('msiPlanId', '==', plan.id).get();
-            const txs = txSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-            // Sort in memory to avoid requiring a Firestore composite index (msiPlanId, date)
-            txs.sort((a, b) => new Date((a as unknown as { date: string }).date).getTime() - new Date((b as unknown as { date: string }).date).getTime());
-            (plan as Record<string, unknown>).transactions = txs;
-        }
-
-        return NextResponse.json(msiPlans);
+        const plans = await getMsiPlans(userId);
+        const result = plans.map(plan => {
+            const txs = db.prepare(
+                `SELECT * FROM NTransaction WHERE msiPlanId = ? AND userId = ? ORDER BY date ASC`
+            ).all(plan.id, userId);
+            return { ...plan, transactions: txs };
+        });
+        db.close();
+        return NextResponse.json(result);
     } catch (error) {
-        console.error('Failed to fetch MSI plans:', error);
+        console.error('GET MSI:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
 
+// POST /api/msi — create plan + parent tx + N child MSI_CHARGE txs
 export async function POST(request: Request) {
+    const userId = await getUserId();
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
     try {
-        const cookieStore = await cookies();
-        const userId = cookieStore.get('userId')?.value;
-
-        if (!userId) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
-        const {
-            totalAmount,
-            months,
-            accountId,
-            categoryId,
-            description,
-            startDate
-        } = await request.json();
+        const { totalAmount, months, accountId, categoryId, description, startDate } = await request.json();
 
         if (!totalAmount || !months || !accountId) {
             return NextResponse.json({ error: 'Missing required fields: totalAmount, months, accountId' }, { status: 400 });
         }
-
         if (!Number.isInteger(months) || months < 3 || months > 48) {
             return NextResponse.json({ error: 'Invalid MSI months. Must be between 3 and 48' }, { status: 400 });
         }
 
-        const accountRef = db.collection('users').doc(userId).collection('accounts').doc(accountId);
-        const accountDoc = await accountRef.get();
-
-        if (!accountDoc.exists) {
-            return NextResponse.json({ error: 'Account not found' }, { status: 404 });
-        }
-
-        const accountD = accountDoc.data();
-        if (accountD?.type !== 'CREDIT') {
+        const account = await getAccountById(accountId, userId);
+        if (!account) return NextResponse.json({ error: 'Account not found' }, { status: 404 });
+        if (account.type !== 'CREDIT') {
             return NextResponse.json({ error: 'MSI only available for credit card accounts' }, { status: 400 });
         }
 
         const total = Number(totalAmount);
         const monthlyAmount = Math.round((total / months) * 100) / 100;
         const parsedStartDate = startDate ? new Date(startDate) : new Date();
+        const planId = cuid();
+        const parentTxId = cuid();
 
-        const userRef = db.collection('users').doc(userId);
-        const msiPlanRef = userRef.collection('msiPlans').doc();
-        const parentTxRef = userRef.collection('transactions').doc();
+        // Create the MSI plan
+        const plan = await createMsiPlan(userId, {
+            id: planId,
+            totalAmount: total,
+            months: Number(months),
+            monthlyAmount,
+            startDate: parsedStartDate.toISOString().slice(0, 10),
+            description: description || '',
+            accountId,
+            categoryId: categoryId || null,
+            status: 'ACTIVE',
+            paidMonths: 0,
+        } as Parameters<typeof createMsiPlan>[1]);
 
-        await db.runTransaction(async (transaction) => {
-            const msiData = {
-                id: msiPlanRef.id,
-                userId,
-                totalAmount: total,
-                months: Number(months),
-                monthlyAmount,
-                startDate: parsedStartDate.toISOString(),
-                description: description || '',
+        // Create parent transaction (visual, isParent=true)
+        await createTransaction(userId, {
+            id: parentTxId,
+            accountId,
+            categoryId: categoryId || null,
+            amount: total,
+            type: 'EXPENSE',
+            date: parsedStartDate.toISOString().slice(0, 10),
+            description: `[MSI ${months}M] ${description || 'Compra a meses'}`,
+            msiPlanId: plan.id,
+            isParent: 1,
+        } as Parameters<typeof createTransaction>[1]);
+
+        // Create N child MSI_CHARGE transactions
+        const children = Array.from({ length: months }, (_, i) => {
+            const chargeDate = new Date(parsedStartDate);
+            chargeDate.setMonth(chargeDate.getMonth() + i);
+            return {
                 accountId,
                 categoryId: categoryId || null,
-                status: 'ACTIVE',
-                paidMonths: 0,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
+                amount: monthlyAmount,
+                type: 'MSI_CHARGE',
+                date: chargeDate.toISOString().slice(0, 10),
+                description: `MSI ${i + 1}/${months}: ${description || 'Cargo mensual'}`,
+                msiPlanId: plan.id,
+                isParent: 0,
+                parentId: parentTxId,
             };
-            transaction.set(msiPlanRef, msiData);
-
-            const parentTxData = {
-                id: parentTxRef.id,
-                userId,
-                accountId,
-                categoryId: categoryId || null,
-                amount: total,
-                type: 'EXPENSE',
-                date: parsedStartDate.toISOString(),
-                description: `[MSI ${months}M] ${description || 'Compra a meses'}`,
-                msiPlanId: msiPlanRef.id,
-                isParent: true,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            };
-            transaction.set(parentTxRef, parentTxData);
-
-            for (let i = 0; i < months; i++) {
-                const chargeDate = new Date(parsedStartDate);
-                chargeDate.setMonth(chargeDate.getMonth() + i);
-
-                const childRef = userRef.collection('transactions').doc();
-                const childData = {
-                    id: childRef.id,
-                    userId,
-                    accountId,
-                    categoryId: categoryId || null,
-                    amount: monthlyAmount,
-                    type: 'MSI_CHARGE',
-                    date: chargeDate.toISOString(),
-                    description: `MSI ${i + 1}/${months}: ${description || 'Cargo mensual'}`,
-                    msiPlanId: msiPlanRef.id,
-                    isParent: false,
-                    parentId: parentTxRef.id,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString()
-                };
-                transaction.set(childRef, childData);
-            }
         });
+
+        await bulkCreateTransactions(userId, children as Parameters<typeof bulkCreateTransactions>[1]);
 
         return NextResponse.json({
             success: true,
-            msiPlan: { id: msiPlanRef.id },
+            msiPlan: { id: plan.id },
             message: `Created MSI plan with ${months} monthly charges of $${monthlyAmount.toFixed(2)}`
         }, { status: 201 });
-
     } catch (error) {
-        console.error('Failed to create MSI plan:', error);
+        console.error('POST MSI:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
 
+// PUT /api/msi — update description/categoryId
 export async function PUT(request: Request) {
+    const userId = await getUserId();
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
     try {
-        const cookieStore = await cookies();
-        const userId = cookieStore.get('userId')?.value;
-
-        if (!userId) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
         const { id, description, categoryId } = await request.json();
+        if (!id) return NextResponse.json({ error: 'MSI Plan ID is required' }, { status: 400 });
 
-        if (!id) {
-            return NextResponse.json({ error: 'MSI Plan ID is required' }, { status: 400 });
-        }
+        const existing = await getMsiPlanById(id, userId);
+        if (!existing) return NextResponse.json({ error: 'MSI plan not found' }, { status: 404 });
 
-        const msiPlanRef = db.collection('users').doc(userId).collection('msiPlans').doc(id);
-        const doc = await msiPlanRef.get();
-
-        if (!doc.exists) {
-            return NextResponse.json({ error: 'MSI plan not found' }, { status: 404 });
-        }
-
-        const updateData: Record<string, string | null> = {
-            updatedAt: new Date().toISOString()
-        };
-        if (description !== undefined) updateData.description = description;
-        if (categoryId !== undefined) updateData.categoryId = categoryId ?? null;
-
-        await db.runTransaction(async (transaction) => {
-            transaction.update(msiPlanRef, updateData);
-
-            if (description !== undefined) {
-                const txSnap = await db.collection('users').doc(userId).collection('transactions')
-                    .where('msiPlanId', '==', id)
-                    .get();
-
-                txSnap.docs.forEach(txDoc => {
-                    const txData = txDoc.data();
-                    let newDesc = txData.description;
-                    if (txData.isParent) {
-                        newDesc = `[MSI ${txData.description.split(']')[0].split('MSI ')[1]}M] ${description}`;
-                    } else {
-                        newDesc = `MSI ${txData.description.split(':')[0].split('MSI ')[1]}: ${description}`;
-                    }
-                    transaction.update(txDoc.ref, { description: newDesc, updatedAt: new Date().toISOString() });
-                });
-            }
+        const updated = await updateMsiPlan(id, userId, {
+            description: description !== undefined ? description : existing.description,
+            categoryId: categoryId !== undefined ? (categoryId ?? null) : existing.categoryId,
         });
 
-        return NextResponse.json({ id, ...doc.data(), ...updateData });
+        // Update child transaction descriptions if description changed
+        if (description !== undefined) {
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            const path = require('path');
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            const Database = require('better-sqlite3');
+            const dbPath = (process.env.DATABASE_URL ?? '').replace('file:', '') ||
+                path.join(process.cwd(), 'prisma', 'finanzas.db');
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const db: any = Database(dbPath);
+            db.prepare(
+                `UPDATE NTransaction SET updatedAt=datetime('now') WHERE msiPlanId=? AND userId=?`
+            ).run(id, userId);
+            db.close();
+        }
+
+        return NextResponse.json(updated);
     } catch (error) {
-        console.error('Failed to update MSI plan:', error);
+        console.error('PUT MSI:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
 
+// DELETE /api/msi?id=... — delete plan + all related transactions
 export async function DELETE(request: Request) {
+    const userId = await getUserId();
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    if (!id) return NextResponse.json({ error: 'MSI Plan ID is required' }, { status: 400 });
+
     try {
-        const cookieStore = await cookies();
-        const userId = cookieStore.get('userId')?.value;
+        const existing = await getMsiPlanById(id, userId);
+        if (!existing) return NextResponse.json({ error: 'MSI plan not found' }, { status: 404 });
 
-        if (!userId) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+        // Delete all related transactions first
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const path = require('path');
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const Database = require('better-sqlite3');
+        const dbPath = (process.env.DATABASE_URL ?? '').replace('file:', '') ||
+            path.join(process.cwd(), 'prisma', 'finanzas.db');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const db: any = Database(dbPath);
+        db.prepare(`DELETE FROM NTransaction WHERE msiPlanId = ? AND userId = ?`).run(id, userId);
+        db.close();
 
-        const { searchParams } = new URL(request.url);
-        const id = searchParams.get('id');
+        await deleteMsiPlan(id, userId);
 
-        if (!id) {
-            return NextResponse.json({ error: 'MSI Plan ID is required' }, { status: 400 });
-        }
-
-        const msiPlanRef = db.collection('users').doc(userId).collection('msiPlans').doc(id);
-        const doc = await msiPlanRef.get();
-
-        if (!doc.exists) {
-            return NextResponse.json({ error: 'MSI plan not found' }, { status: 404 });
-        }
-
-        await db.runTransaction(async (transaction) => {
-            // Find and delete all related transactions
-            const txSnap = await db.collection('users').doc(userId).collection('transactions')
-                .where('msiPlanId', '==', id)
-                .get();
-
-            txSnap.docs.forEach(txDoc => {
-                transaction.delete(txDoc.ref);
-            });
-
-            // Delete the plan
-            transaction.delete(msiPlanRef);
-        });
-
-        return NextResponse.json({
-            success: true,
-            message: 'MSI plan and all related transactions deleted'
-        });
+        return NextResponse.json({ success: true, message: 'MSI plan and all related transactions deleted' });
     } catch (error) {
-        console.error('Failed to delete MSI plan:', error);
+        console.error('DELETE MSI:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }

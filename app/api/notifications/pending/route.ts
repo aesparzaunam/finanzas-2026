@@ -1,48 +1,31 @@
+import { getUserId } from '@/app/lib/api-utils';
 import { NextResponse } from 'next/server';
-import { db } from '@/app/lib/firebase';
-import { getUserId, unauthorizedResponse, internalErrorResponse } from '@/app/lib/api-utils';
+import { getRecurringPayments, getAccounts, getBudgets, getTransactions } from '@/app/lib/db';
 
-interface Notification {
-    type: 'RECURRING_PAYMENT' | 'BUDGET_WARNING' | 'CARD_CUTOFF';
-    title: string;
-    body: string;
-    url: string;
-    urgency: 'low' | 'normal' | 'high';
-    daysUntil: number;
-}
-
-// GET /api/notifications/pending  – devuelve alertas pendientes para el usuario actual
+// GET /api/notifications/pending
 export async function GET() {
-    try {
-        const userId = await getUserId();
-        if (!userId) return unauthorizedResponse();
+    const userId = await getUserId();
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+    try {
         const now = new Date();
         const in7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
         const in3Days = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
 
-        const userRef = db.collection('users').doc(userId);
-        const notifications: Notification[] = [];
+        const notifications: { type: string; title: string; body: string; url: string; urgency: string; daysUntil: number }[] = [];
 
-        // 1. Pagos recurrentes próximos (en los próximos 7 días)
-        const recurringSnap = await userRef
-            .collection('recurring_payments')
-            .where('status', '==', 'ACTIVE')
-            .get();
-
-        recurringSnap.docs.forEach(doc => {
-            const data = doc.data();
-            if (!data.nextPaymentDate) return;
-
-            const nextDate = new Date(data.nextPaymentDate);
+        // 1. Pagos recurrentes próximos (7 días)
+        const recurringPayments = await getRecurringPayments(userId, 'ACTIVE');
+        recurringPayments.forEach(rp => {
+            if (!rp.nextPaymentDate) return;
+            const nextDate = new Date(rp.nextPaymentDate);
             if (nextDate <= in7Days && nextDate >= now) {
                 const daysUntil = Math.ceil((nextDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
                 const isUrgent = nextDate <= in3Days;
-
                 notifications.push({
                     type: 'RECURRING_PAYMENT',
-                    title: isUrgent ? `⚠️ Pago próximo: ${data.name}` : `📅 Recordatorio: ${data.name}`,
-                    body: `Vence ${daysUntil === 0 ? 'hoy' : daysUntil === 1 ? 'mañana' : `en ${daysUntil} días`} · $${Number(data.amount).toLocaleString('es-MX')}`,
+                    title: isUrgent ? `⚠️ Pago próximo: ${rp.name}` : `📅 Recordatorio: ${rp.name}`,
+                    body: `Vence ${daysUntil === 0 ? 'hoy' : daysUntil === 1 ? 'mañana' : `en ${daysUntil} días`} · $${Number(rp.amount).toLocaleString('es-MX')}`,
                     url: '/',
                     urgency: isUrgent ? 'high' : 'normal',
                     daysUntil,
@@ -51,33 +34,27 @@ export async function GET() {
         });
 
         // 2. Presupuestos al 80% o más
-        const [budgetSnap, txSnap] = await Promise.all([
-            userRef.collection('budgets').get(),
-            userRef.collection('transactions')
-                .where('type', '==', 'EXPENSE')
-                .where('date', '>=', new Date(now.getFullYear(), now.getMonth(), 1).toISOString())
-                .get(),
+        const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        const [budgets, { transactions }] = await Promise.all([
+            getBudgets(userId),
+            getTransactions(userId, { limit: 1000, fromDate: `${monthStr}-01`, type: 'EXPENSE' }),
         ]);
 
-        // Agrupar gastos del mes por categoría
         const spentByCategory = new Map<string, number>();
-        txSnap.docs.forEach(doc => {
-            const data = doc.data();
-            if (!data.categoryId) return;
-            spentByCategory.set(data.categoryId, (spentByCategory.get(data.categoryId) || 0) + Number(data.amount));
+        transactions.forEach(tx => {
+            if (!tx.categoryId) return;
+            spentByCategory.set(tx.categoryId, (spentByCategory.get(tx.categoryId) || 0) + Number(tx.amount));
         });
 
-        budgetSnap.docs.forEach(doc => {
-            const data = doc.data();
-            const spent = spentByCategory.get(data.categoryId) || 0;
-            const limit = Number(data.amount);
+        budgets.forEach(budget => {
+            const spent = spentByCategory.get(budget.categoryId) || 0;
+            const limit = Number(budget.amount);
             const pct = limit > 0 ? (spent / limit) * 100 : 0;
-
             if (pct >= 80) {
                 notifications.push({
                     type: 'BUDGET_WARNING',
                     title: pct >= 100 ? `🔴 Presupuesto excedido` : `🟡 Presupuesto al ${Math.round(pct)}%`,
-                    body: `Categoría: Presupuesto · $${spent.toLocaleString('es-MX')} / $${limit.toLocaleString('es-MX')}`,
+                    body: `$${spent.toLocaleString('es-MX')} / $${limit.toLocaleString('es-MX')}`,
                     url: '/budgets',
                     urgency: pct >= 100 ? 'high' : 'normal',
                     daysUntil: 0,
@@ -85,24 +62,17 @@ export async function GET() {
             }
         });
 
-        // 3. Fecha de corte de tarjetas (si billingDay está configurado)
-        const accountSnap = await userRef.collection('accounts').where('type', '==', 'CREDIT').get();
-        accountSnap.docs.forEach(doc => {
-            const data = doc.data();
-            if (!data.billingDay) return;
-
-            const billingDay = Number(data.billingDay);
+        // 3. Fechas de corte de tarjetas (próximos 5 días)
+        const accounts = await getAccounts(userId);
+        accounts.filter(a => a.type === 'CREDIT' && a.billingDay).forEach(acc => {
+            const billingDay = Number(acc.billingDay);
             let cutoffDate = new Date(now.getFullYear(), now.getMonth(), billingDay);
-            if (cutoffDate < now) {
-                // Ya pasó este mes, calcular el del próximo mes
-                cutoffDate = new Date(now.getFullYear(), now.getMonth() + 1, billingDay);
-            }
-
+            if (cutoffDate < now) cutoffDate = new Date(now.getFullYear(), now.getMonth() + 1, billingDay);
             const daysUntil = Math.ceil((cutoffDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
             if (daysUntil <= 5 && daysUntil >= 0) {
                 notifications.push({
                     type: 'CARD_CUTOFF',
-                    title: `💳 Corte de tarjeta: ${data.name}`,
+                    title: `💳 Corte de tarjeta: ${acc.name}`,
                     body: `Fecha de corte ${daysUntil === 0 ? 'hoy' : `en ${daysUntil} días`}`,
                     url: '/accounts',
                     urgency: daysUntil <= 2 ? 'high' : 'normal',
@@ -111,17 +81,15 @@ export async function GET() {
             }
         });
 
-        // Ordenar por urgencia y días restantes
         notifications.sort((a, b) => {
-            const urgencyOrder = { high: 0, normal: 1, low: 2 };
-            if (urgencyOrder[a.urgency] !== urgencyOrder[b.urgency]) {
-                return urgencyOrder[a.urgency] - urgencyOrder[b.urgency];
-            }
+            const order: Record<string, number> = { high: 0, normal: 1, low: 2 };
+            if (order[a.urgency] !== order[b.urgency]) return order[a.urgency] - order[b.urgency];
             return a.daysUntil - b.daysUntil;
         });
 
         return NextResponse.json(notifications);
     } catch (error) {
-        return internalErrorResponse('GET pending notifications', error);
+        console.error('GET pending notifications:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }

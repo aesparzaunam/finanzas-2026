@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Antigravity - Mis Cuentas</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-container": "#7e9cff",
+                    "primary-fixed": "#7e9cff",
+                    "on-tertiary": "#00692c",
+                    "secondary-fixed": "#d9e3f6",
+                    "primary-fixed-dim": "#698dff",
+                    "inverse-primary": "#1b54d7",
+                    "on-tertiary-container": "#005f28",
+                    "on-primary-fixed": "#000000",
+                    "error-container": "#a70138",
+                    "surface-tint": "#92aaff",
+                    "on-secondary-fixed": "#36404f",
+                    "secondary-container": "#3d4756",
+                    "inverse-on-surface": "#4d556b",
+                    "on-background": "#dee5ff",
+                    "on-secondary": "#485262",
+                    "on-primary": "#002777",
+                    "inverse-surface": "#faf8ff",
+                    "surface-dim": "#060e20",
+                    "outline": "#6d758c",
+                    "surface-container-lowest": "#000000",
+                    "tertiary-dim": "#5bf083",
+                    "tertiary": "#c5ffc9",
+                    "surface-container-low": "#091328",
+                    "on-secondary-container": "#c7d1e4",
+                    "error": "#ff6e84",
+                    "surface-variant": "#192540",
+                    "surface": "#060e20",
+                    "on-surface-variant": "#a3aac4",
+                    "tertiary-fixed": "#6bff8f",
+                    "error-dim": "#d73357",
+                    "surface-container-highest": "#192540",
+                    "on-error-container": "#ffb2b9",
+                    "secondary-fixed-dim": "#cbd5e8",
+                    "tertiary-fixed-dim": "#5bf083",
+                    "on-secondary-fixed-variant": "#525c6c",
+                    "primary-dim": "#3c6bed",
+                    "on-tertiary-fixed": "#004a1d",
+                    "tertiary-container": "#6bff8f",
+                    "on-primary-fixed-variant": "#002572",
+                    "secondary": "#d9e3f6",
+                    "on-surface": "#dee5ff",
+                    "primary": "#92aaff",
+                    "surface-container": "#0f1930",
+                    "surface-bright": "#1f2b49",
+                    "on-tertiary-fixed-variant": "#006a2d",
+                    "outline-variant": "#40485d",
+                    "on-error": "#490013",
+                    "on-primary-container": "#001d5d",
+                    "background": "#060e20",
+                    "surface-container-high": "#141f38",
+                    "secondary-dim": "#cbd5e8"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "1.5rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Inter"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #060E20; color: #DEE5FF; }
+        .glass-card {
+            background: rgba(20, 31, 56, 0.6);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(146, 170, 255, 0.1);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .kinetic-shadow {
+            box-shadow: 0 40px 40px rgba(0, 0, 0, 0.4);
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-primary/30">
+<!-- SideNavBar (Desktop) -->
+<aside class="h-full w-64 fixed left-0 top-0 hidden md:flex flex-col bg-[#091328] shadow-[40px_0_40px_rgba(0,0,0,0.4)] z-[60] p-6 space-y-2">
+<div class="text-lg font-black text-[#DEE5FF] mb-8 tracking-tighter">The Kinetic Void</div>
+<nav class="flex-1 space-y-1">
+<a class="text-[#DEE5FF]/40 hover:text-[#DEE5FF] px-4 py-3 flex items-center gap-3 hover:bg-[#141F38] transition-all duration-400 group" href="#">
+<span class="material-symbols-outlined text-xl group-hover:translate-x-1 transition-transform">grid_view</span>
+<span class="font-['Inter'] uppercase tracking-[0.05em] text-[0.6875rem]">Inicio</span>
+</a>
+<a class="text-[#92AAFF] bg-[#141F38] rounded-xl border-r-4 border-[#3C6BED] px-4 py-3 flex items-center gap-3 transition-all duration-400" href="#">
+<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">account_balance_wallet</span>
+<span class="font-['Inter'] uppercase tracking-[0.05em] text-[0.6875rem]">Cuentas</span>
+</a>
+<a class="text-[#DEE5FF]/40 hover:text-[#DEE5FF] px-4 py-3 flex items-center gap-3 hover:bg-[#141F38] transition-all duration-400 group" href="#">
+<span class="material-symbols-outlined text-xl group-hover:translate-x-1 transition-transform">add_circle</span>
+<span class="font-['Inter'] uppercase tracking-[0.05em] text-[0.6875rem]">Transacción</span>
+</a>
+<a class="text-[#DEE5FF]/40 hover:text-[#DEE5FF] px-4 py-3 flex items-center gap-3 hover:bg-[#141F38] transition-all duration-400 group" href="#">
+<span class="material-symbols-outlined text-xl group-hover:translate-x-1 transition-transform">history</span>
+<span class="font-['Inter'] uppercase tracking-[0.05em] text-[0.6875rem]">Historial</span>
+</a>
+<a class="text-[#DEE5FF]/40 hover:text-[#DEE5FF] px-4 py-3 flex items-center gap-3 hover:bg-[#141F38] transition-all duration-400 group" href="#">
+<span class="material-symbols-outlined text-xl group-hover:translate-x-1 transition-transform">person</span>
+<span class="font-['Inter'] uppercase tracking-[0.05em] text-[0.6875rem]">Perfil</span>
+</a>
+</nav>
+<div class="pt-6 mt-auto space-y-1">
+<a class="text-[#DEE5FF]/40 hover:text-[#DEE5FF] px-4 py-3 flex items-center gap-3 hover:bg-[#141F38] transition-all duration-400" href="#">
+<span class="material-symbols-outlined text-xl">settings</span>
+<span class="font-['Inter'] uppercase tracking-[0.05em] text-[0.6875rem]">Ajustes</span>
+</a>
+<button class="w-full mt-4 bg-primary text-on-primary font-bold py-3 rounded-xl hover:shadow-[0_0_15px_#92aaff] transition-all duration-300 active:scale-95">
+                Nueva Operación
+            </button>
+</div>
+</aside>
+<!-- TopNavBar (Mobile/Tablet and Desktop Header) -->
+<header class="bg-surface/60 backdrop-blur-xl dark:bg-[#060E20]/60 sticky top-0 z-50 shadow-[0_0_15px_rgba(60,107,237,0.1)] md:ml-64">
+<div class="flex justify-between items-center w-full px-6 py-4 max-w-screen-2xl mx-auto font-['Inter'] antialiased tracking-tight">
+<div class="flex items-center gap-4">
+<span class="md:hidden material-symbols-outlined text-[#92AAFF]">menu</span>
+<h1 class="text-xl font-bold tracking-tighter text-[#DEE5FF]">Antigravity</h1>
+</div>
+<nav class="hidden md:flex gap-8 items-center">
+<a class="text-[#DEE5FF]/60 hover:text-[#DEE5FF] transition-colors" href="#">Inicio</a>
+<a class="text-[#92AAFF] border-b-2 border-[#92AAFF] pb-1" href="#">Cuentas</a>
+<a class="text-[#DEE5FF]/60 hover:text-[#DEE5FF] transition-colors" href="#">Historial</a>
+</nav>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-[#DEE5FF]/60 hover:bg-[#141F38]/50 p-2 rounded-full cursor-pointer transition-all duration-300">notifications</span>
+<div class="w-8 h-8 rounded-full bg-surface-variant overflow-hidden">
+<img alt="User profile" class="w-full h-full object-cover" data-alt="Close-up portrait of a professional man in a modern office environment with soft blue rim lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZ6uYw6GLn7BjeFFg38Nku2xeKCeN1-twzCQL9qPjJ-E_QChqGPDjCeCQybX7olBhzeplvPCn5ACHApBOBXzMawBKepn4A2wfWTel4yzpH9KxCX67Hkyt0oaDIXI1sW304CfEGw5wS0WDfr5xT0yKaVQ9s16jtc0QVE06n7Ox5FoTuF6zSXUk_RNLLDxZt_XNL48wzPKTZjwaKs6aQsyP9kw-9Bg3IeGUyDJxMA1-4zpl-f4kkUyBBxnbROxNTwIRj4QyJU9r9LpY"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="md:ml-64 min-h-screen p-6 md:p-12 pb-32">
+<div class="max-w-6xl mx-auto">
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+<div>
+<span class="font-['Inter'] uppercase tracking-[0.1em] text-[0.6875rem] text-primary mb-2 block">Resumen Global</span>
+<h2 class="text-4xl md:text-5xl font-black tracking-tighter text-on-surface">Cuentas</h2>
+<p class="text-on-surface-variant mt-2 max-w-md">Administra tus activos digitales y cuentas bancarias tradicionales en una sola bóveda cinética.</p>
+</div>
+<button class="bg-primary text-on-primary px-8 py-4 rounded-xl font-bold flex items-center gap-2 hover:shadow-[0_0_20px_rgba(146,170,255,0.4)] transition-all duration-300 group">
+<span class="material-symbols-outlined group-hover:rotate-90 transition-transform">add</span>
+                    Crear nueva cuenta
+                </button>
+</div>
+<!-- Accounts Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+<!-- Account Card: BBVA -->
+<div class="glass-card p-8 rounded-xl flex flex-col justify-between min-h-[240px] hover:-translate-y-2 transition-transform duration-500 group relative overflow-hidden">
+<div class="absolute -right-4 -top-4 w-32 h-32 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-colors"></div>
+<div class="flex justify-between items-start mb-12">
+<div>
+<p class="text-[0.6875rem] font-bold uppercase tracking-widest text-on-surface-variant mb-1">BBVA Premium</p>
+<h3 class="text-xl font-bold tracking-tight">Main Savings</h3>
+</div>
+<img alt="Bank Logo" class="h-6 w-auto object-contain brightness-125" data-alt="Abstract minimalist corporate logo with deep blue and white geometric shapes on transparent background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD2D2euYtC8SXHPWgcMyn1qv58d5atghFNKcpC8DcfbKoSFHm4QBHbp9lZnfukbh31ZVipqw-PxDmAu7jucxAov7elLq4EOheO7HzWXGm0fc2ICFxjH_98AV9L_CqF_g1lju8FgNUY0SD9UCNwHx5yssFXXtteDboBWa6US2wlUGOrmGd04nDRvEBIUZ1-ROfwSALOX2psoX8XzNV6-nORXbzz6udWgguscZlF_Zbio_pJxiPqegVVU51YIJiW_esgnScmwfedn82A"/>
+</div>
+<div>
+<p class="text-3xl font-black tracking-tighter mb-4">$42,950.00</p>
+<div class="flex items-center gap-2 text-on-surface-variant text-sm">
+<span class="material-symbols-outlined text-sm">history</span>
+<span>Última: Supermercado • $124.50</span>
+</div>
+</div>
+</div>
+<!-- Account Card: Santander -->
+<div class="glass-card p-8 rounded-xl flex flex-col justify-between min-h-[240px] hover:-translate-y-2 transition-transform duration-500 group relative overflow-hidden">
+<div class="absolute -right-4 -top-4 w-32 h-32 bg-tertiary/5 rounded-full blur-3xl group-hover:bg-tertiary/10 transition-colors"></div>
+<div class="flex justify-between items-start mb-12">
+<div>
+<p class="text-[0.6875rem] font-bold uppercase tracking-widest text-on-surface-variant mb-1">Santander Select</p>
+<h3 class="text-xl font-bold tracking-tight">Investment Portfolio</h3>
+</div>
+<img alt="Bank Logo" class="h-6 w-auto object-contain" data-alt="Minimalist red and white brand icon representing a flame or fire in a professional graphic style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBC0Ixvg0SaIVNHWf8ORfNP6sUPoTGX9xsMn2FpoK73TWKlxuR6lDp8WvRGfPZ9VEaf1yIPuEUZrgdt30ccYqNqgG6Zp0bwnto35nxI4oPjrYtSNWwjlKjyecRstgfuDq6VYBYo-8IwuT299pYH4MZvmcuKcLJWBr3a8MVvNClux_JytE8Crqm3hnWLcqJQAWgxRmaDRXYtZblgFLtbFjdInr2IRYWs37TYyXRCOMcih4FX_cW2qWmoTgHNC_yfFChaPZg2Qp0YGKc"/>
+</div>
+<div>
+<p class="text-3xl font-black tracking-tighter mb-4 text-tertiary-dim">$128,402.12</p>
+<div class="flex items-center gap-2 text-on-surface-variant text-sm">
+<span class="material-symbols-outlined text-sm">trending_up</span>
+<span>Última: Dividendos MSFT • +$450.00</span>
+</div>
+</div>
+</div>
+<!-- Account Card: NuBank -->
+<div class="glass-card p-8 rounded-xl flex flex-col justify-between min-h-[240px] hover:-translate-y-2 transition-transform duration-500 group relative overflow-hidden">
+<div class="absolute -right-4 -top-4 w-32 h-32 bg-error/5 rounded-full blur-3xl group-hover:bg-error/10 transition-colors"></div>
+<div class="flex justify-between items-start mb-12">
+<div>
+<p class="text-[0.6875rem] font-bold uppercase tracking-widest text-on-surface-variant mb-1">NuBank Platinum</p>
+<h3 class="text-xl font-bold tracking-tight">Everyday Credit</h3>
+</div>
+<span class="material-symbols-outlined text-3xl text-purple-400">credit_card</span>
+</div>
+<div>
+<p class="text-3xl font-black tracking-tighter mb-4">$3,200.00</p>
+<div class="flex items-center gap-2 text-on-surface-variant text-sm">
+<span class="material-symbols-outlined text-sm">shopping_bag</span>
+<span>Última: Starbucks Coffee • $6.50</span>
+</div>
+</div>
+</div>
+<!-- Create New Placeholder -->
+<div class="border-2 border-dashed border-outline-variant/30 rounded-xl flex flex-col items-center justify-center min-h-[240px] hover:border-primary/50 transition-all cursor-pointer group">
+<div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center mb-4 group-hover:bg-primary transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-on-primary">add</span>
+</div>
+<p class="font-bold text-on-surface-variant group-hover:text-on-surface">Vincular Nueva Entidad</p>
+</div>
+</div>
+<!-- Transactional Section (Bento Style) -->
+<section class="mt-20">
+<h3 class="text-2xl font-bold mb-8 flex items-center gap-3">
+<span class="w-2 h-8 bg-primary rounded-full"></span>
+                    Actividad Reciente
+                </h3>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<!-- Large Activity Feed -->
+<div class="lg:col-span-2 glass-card rounded-xl p-6">
+<div class="space-y-4">
+<div class="flex items-center justify-between p-4 hover:bg-surface-bright/50 rounded-lg transition-colors cursor-pointer group">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">shopping_cart</span>
+</div>
+<div>
+<p class="font-bold">Amazon.com Marketplace</p>
+<p class="text-xs text-on-surface-variant uppercase tracking-wider">Hoy, 10:45 AM • BBVA Premium</p>
+</div>
+</div>
+<span class="font-bold text-on-surface">-$120.99</span>
+</div>
+<div class="flex items-center justify-between p-4 hover:bg-surface-bright/50 rounded-lg transition-colors cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center">
+<span class="material-symbols-outlined text-tertiary-dim">payments</span>
+</div>
+<div>
+<p class="font-bold">Nómina Mensual</p>
+<p class="text-xs text-on-surface-variant uppercase tracking-wider">Ayer • Santander Select</p>
+</div>
+</div>
+<span class="font-bold text-tertiary-dim">+$4,200.00</span>
+</div>
+<div class="flex items-center justify-between p-4 hover:bg-surface-bright/50 rounded-lg transition-colors cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center">
+<span class="material-symbols-outlined text-error">warning</span>
+</div>
+<div>
+<p class="font-bold">Suscripción Netflix</p>
+<p class="text-xs text-on-surface-variant uppercase tracking-wider">24 Oct • NuBank Platinum</p>
+</div>
+</div>
+<span class="font-bold text-on-surface">-$15.99</span>
+</div>
+</div>
+</div>
+<!-- Stats Card -->
+<div class="bg-primary/10 rounded-xl p-8 flex flex-col justify-between border border-primary/20">
+<div>
+<h4 class="text-primary font-bold uppercase tracking-widest text-xs mb-4">Eficiencia de Gasto</h4>
+<p class="text-4xl font-black text-on-surface mb-2">82%</p>
+<p class="text-sm text-on-surface-variant">Estás gastando un 12% menos que el mes anterior. ¡Buen trabajo!</p>
+</div>
+<div class="h-24 w-full mt-6 bg-gradient-to-t from-primary/20 to-transparent rounded-lg flex items-end gap-1 p-2">
+<div class="flex-1 bg-primary h-[40%] rounded-t-sm"></div>
+<div class="flex-1 bg-primary h-[60%] rounded-t-sm"></div>
+<div class="flex-1 bg-primary h-[55%] rounded-t-sm"></div>
+<div class="flex-1 bg-primary h-[80%] rounded-t-sm"></div>
+<div class="flex-1 bg-primary h-[90%] rounded-t-sm"></div>
+<div class="flex-1 bg-primary h-[70%] rounded-t-sm"></div>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- BottomNavBar (Mobile) -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-3xl md:hidden bg-[#091328]/60 backdrop-blur-lg shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+<div class="flex justify-around items-end px-4 pb-6 pt-2 w-full font-['Inter'] text-[10px] uppercase tracking-widest font-bold">
+<a class="flex flex-col items-center justify-center text-[#DEE5FF]/50 active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined mb-1">home</span>
+<span>Inicio</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#92AAFF] scale-110 active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">wallet</span>
+<span>Cuentas</span>
+</a>
+<button class="bg-primary text-on-primary w-12 h-12 rounded-full flex items-center justify-center -translate-y-4 shadow-lg active:scale-90 transition-all">
+<span class="material-symbols-outlined">add</span>
+</button>
+<a class="flex flex-col items-center justify-center text-[#DEE5FF]/50 active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined mb-1">receipt_long</span>
+<span>Historial</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#DEE5FF]/50 active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined mb-1">person</span>
+<span>Perfil</span>
+</a>
+</div>
+</nav>
+<!-- Modal: Crear Nueva Cuenta (Hidden by default, simplified for design reference) -->
+<div class="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-surface-dim/90 backdrop-blur-md hidden">
+<div class="max-w-md w-full glass-card p-8 rounded-xl kinetic-shadow border border-outline-variant/30">
+<div class="flex justify-between items-center mb-8">
+<h2 class="text-2xl font-bold tracking-tight">Nueva Cuenta</h2>
+<button class="text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined">close</span></button>
+</div>
+<div class="space-y-6">
+<!-- Step Progress -->
+<div class="flex gap-2">
+<div class="h-1 flex-1 bg-primary rounded-full"></div>
+<div class="h-1 flex-1 bg-surface-variant rounded-full"></div>
+<div class="h-1 flex-1 bg-surface-variant rounded-full"></div>
+</div>
+<!-- Form Well -->
+<div class="space-y-4">
+<div class="bg-surface-container-lowest p-4 rounded-xl border-b border-transparent focus-within:border-primary transition-all">
+<label class="block text-[10px] uppercase font-bold text-primary mb-1">Entidad Bancaria</label>
+<input class="w-full bg-transparent border-none p-0 text-on-surface focus:ring-0 placeholder:text-on-surface-variant/40" placeholder="Ej. BBVA, NuBank..." type="text"/>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-xl border-b border-transparent focus-within:border-primary transition-all">
+<label class="block text-[10px] uppercase font-bold text-on-surface-variant mb-1">Alias de Cuenta</label>
+<input class="w-full bg-transparent border-none p-0 text-on-surface focus:ring-0 placeholder:text-on-surface-variant/40" placeholder="Ej. Gastos Personales" type="text"/>
+</div>
+</div>
+<div class="flex gap-4 pt-4">
+<button class="flex-1 bg-surface-variant text-on-surface font-bold py-4 rounded-xl hover:bg-surface-bright transition-colors">Cancelar</button>
+<button class="flex-1 bg-primary text-on-primary font-bold py-4 rounded-xl shadow-[0_0_15px_rgba(146,170,255,0.4)]">Siguiente</button>
+</div>
+</div>
+</div>
+</div>
+</body></html>

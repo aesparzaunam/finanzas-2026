@@ -1,274 +1,296 @@
+import { getUserId } from '@/app/lib/api-utils';
 import { NextResponse } from 'next/server';
-import { db } from '@/app/lib/firebase';
-import { cookies } from 'next/headers';
-import * as admin from 'firebase-admin';
+import {
+    getTransactions, getTransactionById,
+    getAccounts, getCategories, getMsiPlans
+} from '@/app/lib/db';
 
+// GET /api/transactions
+// Query params: limit, after(ISO date cursor), from, to, type, accountId, categoryId, q
 export async function GET(request: Request) {
+    const userId = await getUserId();
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
     try {
-        const cookieStore = await cookies();
-        const userId = cookieStore.get('userId')?.value;
-
-        if (!userId) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
         const url = new URL(request.url);
-        const limitParam = parseInt(url.searchParams.get('limit') || '100', 10);
+        const limit   = Math.min(parseInt(url.searchParams.get('limit') || '50', 10), 200);
+        const after   = url.searchParams.get('after') || undefined;
+        const from    = url.searchParams.get('from') || undefined;
+        const to      = url.searchParams.get('to') || undefined;
+        const type    = url.searchParams.get('type') || undefined;
+        const accountId  = url.searchParams.get('accountId') || undefined;
+        const categoryId = url.searchParams.get('categoryId') || undefined;
+        const q = url.searchParams.get('q')?.toLowerCase().trim() || undefined;
 
-        const txRef = db.collection('users').doc(userId).collection('transactions');
-
-        const [snapshot, accSnap, catSnap, msiSnap] = await Promise.all([
-            txRef.orderBy('date', 'desc').limit(limitParam).get(),
-            db.collection('users').doc(userId).collection('accounts').get(),
-            db.collection('users').doc(userId).collection('categories').get(),
-            db.collection('users').doc(userId).collection('msiPlans').get()
+        const [{ transactions, hasMore }, accounts, categories, plans] = await Promise.all([
+            getTransactions(userId, { limit, afterDate: after, fromDate: from, toDate: to, type, accountId, categoryId, q }),
+            getAccounts(userId),
+            getCategories(userId),
+            getMsiPlans(userId),
         ]);
 
-        const accounts = new Map(accSnap.docs.map(d => [d.id, d.data()]));
-        const categories = new Map(catSnap.docs.map(d => [d.id, d.data()]));
-        const msiPlans = new Map(msiSnap.docs.map(d => [d.id, d.data()]));
+        const accountMap  = new Map(accounts.map(a => [a.id, a]));
+        const categoryMap = new Map(categories.map(c => [c.id, c]));
+        const planMap     = new Map(plans.map(p => [p.id, p]));
 
-        const transactions = snapshot.docs.map(doc => {
-            const data = doc.data();
-            const accountData = data.accountId ? accounts.get(data.accountId) as { name: string } | undefined : undefined;
-            const categoryData = data.categoryId ? categories.get(data.categoryId) as { name: string, icon: string, color: string } | undefined : undefined;
-            const msiPlanData = data.msiPlanId ? msiPlans.get(data.msiPlanId) as { months: number, totalAmount: number } | undefined : undefined;
+        const enriched = transactions.map(tx => ({
+            ...tx,
+            isParent: Boolean(tx.isParent),
+            isDeductible: Boolean(tx.isDeductible),
+            tags: tx.tags ? JSON.parse(tx.tags) : [],
+            account:  tx.accountId  ? { name: accountMap.get(tx.accountId)?.name }  : null,
+            category: tx.categoryId ? {
+                name:  categoryMap.get(tx.categoryId)?.name,
+                icon:  categoryMap.get(tx.categoryId)?.icon,
+                color: categoryMap.get(tx.categoryId)?.color,
+            } : null,
+            msiPlan: tx.msiPlanId ? {
+                months:      planMap.get(tx.msiPlanId)?.months,
+                totalAmount: planMap.get(tx.msiPlanId)?.totalAmount,
+            } : null,
+        }));
 
-            return {
-                id: doc.id,
-                ...data,
-                account: accountData ? { name: accountData.name } : null,
-                category: categoryData ? {
-                    name: categoryData.name,
-                    icon: categoryData.icon,
-                    color: categoryData.color
-                } : null,
-                msiPlan: msiPlanData ? {
-                    months: msiPlanData.months,
-                    totalAmount: msiPlanData.totalAmount
-                } : null
-            };
-        });
+        const nextCursor = hasMore && enriched.length > 0
+            ? enriched[enriched.length - 1].date
+            : null;
 
-        return NextResponse.json(transactions);
+        return NextResponse.json({ transactions: enriched, hasMore, nextCursor });
     } catch (error) {
-        console.error('Failed to fetch transactions:', error);
+        console.error('GET transactions:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
 
+// POST /api/transactions
 export async function POST(request: Request) {
+    const userId = await getUserId();
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
     try {
-        const cookieStore = await cookies();
-        const userId = cookieStore.get('userId')?.value;
-        if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        const body = await request.json();
+        const { accountId, categoryId, amount, type, date, description,
+                toAccountId, tags, isParent, msiPlanId, parentId, isDeductible } = body;
 
-        const { date, description, amount, type, accountId, categoryId, toAccountId } = await request.json();
-
-        if (!amount || !type || !accountId) {
-            return NextResponse.json({ error: 'Missing required fields: amount, type, accountId' }, { status: 400 });
+        if (!accountId || !amount || !type || !date) {
+            return NextResponse.json({ error: 'Missing required fields: accountId, amount, type, date' }, { status: 400 });
         }
-        if ((type === 'INCOME' || type === 'EXPENSE') && !categoryId) {
-            return NextResponse.json({ error: 'Category required for income/expense' }, { status: 400 });
-        }
-        if ((type === 'TRANSFER' || type === 'PAGO_TARJETA') && !toAccountId) {
-            return NextResponse.json({ error: 'Destination account required for transfer/payment' }, { status: 400 });
+        const validTypes = ['INCOME', 'EXPENSE', 'TRANSFER', 'PAGO_TARJETA', 'MSI_CHARGE'];
+        if (!validTypes.includes(type)) {
+            return NextResponse.json({ error: `Invalid type. Use: ${validTypes.join(', ')}` }, { status: 400 });
         }
 
-        const amountNum = Number(amount);
-        const txDate = new Date(date || new Date()).toISOString();
-        const userRef = db.collection('users').doc(userId);
-        const newTxRef = userRef.collection('transactions').doc();
-        const accountRef = userRef.collection('accounts').doc(accountId);
-        const toAccountRef = toAccountId ? userRef.collection('accounts').doc(toAccountId) : null;
+        const numAmount = Math.abs(parseFloat(amount));
+        const dateStr = new Date(date).toISOString().slice(0, 10);
 
-        await db.runTransaction(async (transaction) => {
-            const txData: Record<string, unknown> = {
-                id: newTxRef.id, userId, accountId,
-                categoryId: categoryId || null, amount: amountNum, type,
-                date: txDate, description: description || '',
-                createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
-            };
-            if (toAccountId) txData.toAccountId = toAccountId;
-            transaction.set(newTxRef, txData);
+        // SQLite direct for atomic balance update
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const path = require('path');
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const Database = require('better-sqlite3');
+        const dbPath = (process.env.DATABASE_URL ?? '').replace('file:', '') ||
+            path.join(process.cwd(), 'prisma', 'finanzas.db');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const db: any = Database(dbPath);
+        db.pragma('foreign_keys = ON');
 
-            switch (type) {
-                case 'INCOME':
-                    transaction.update(accountRef, { balance: admin.firestore.FieldValue.increment(amountNum) });
-                    break;
-                case 'EXPENSE':
-                case 'MSI_CHARGE':
-                    transaction.update(accountRef, { balance: admin.firestore.FieldValue.increment(-amountNum) });
-                    break;
-                case 'TRANSFER':
-                    transaction.update(accountRef, { balance: admin.firestore.FieldValue.increment(-amountNum) });
-                    if (toAccountRef) transaction.update(toAccountRef, { balance: admin.firestore.FieldValue.increment(amountNum) });
-                    break;
-                case 'PAGO_TARJETA':
-                    transaction.update(accountRef, { balance: admin.firestore.FieldValue.increment(amountNum) });
-                    if (toAccountRef) transaction.update(toAccountRef, { balance: admin.firestore.FieldValue.increment(-amountNum) });
-                    break;
+        const tx = db.transaction(() => {
+            // Check account exists
+            const account = db.prepare('SELECT * FROM Account WHERE id = ? AND userId = ?').get(accountId, userId);
+            if (!account) throw new Error('Account not found');
+
+            // Insert transaction
+            const tx = createTransactionSync(db, userId, {
+                accountId, categoryId: categoryId || null,
+                amount: numAmount, type, date: dateStr,
+                description: description || '',
+                tags: tags ? JSON.stringify(tags) : null,
+                isParent: isParent ? 1 : 0,
+                msiPlanId: msiPlanId || null,
+                parentId: parentId || null,
+                toAccountId: toAccountId || null,
+                isDeductible: isDeductible ? 1 : 0,
+            });
+
+            // Update account balance
+            if (!isParent) {
+                if (type === 'INCOME') {
+                    db.prepare('UPDATE Account SET balance = balance + ?, updatedAt = datetime(\'now\') WHERE id = ? AND userId = ?').run(numAmount, accountId, userId);
+                } else if (['EXPENSE', 'MSI_CHARGE', 'PAGO_TARJETA'].includes(type)) {
+                    db.prepare('UPDATE Account SET balance = balance - ?, updatedAt = datetime(\'now\') WHERE id = ? AND userId = ?').run(numAmount, accountId, userId);
+                } else if (type === 'TRANSFER' && toAccountId) {
+                    db.prepare('UPDATE Account SET balance = balance - ?, updatedAt = datetime(\'now\') WHERE id = ? AND userId = ?').run(numAmount, accountId, userId);
+                    db.prepare('UPDATE Account SET balance = balance + ?, updatedAt = datetime(\'now\') WHERE id = ? AND userId = ?').run(numAmount, toAccountId, userId);
+                }
             }
+            return tx;
         });
 
-        const txData: Record<string, unknown> = {
-            id: newTxRef.id, userId, accountId, categoryId: categoryId || null,
-            amount: amountNum, type, date: txDate, description: description || ''
-        };
-        if (toAccountId) txData.toAccountId = toAccountId;
-        return NextResponse.json(txData, { status: 201 });
+        const newTx = tx();
+        db.close();
+        return NextResponse.json({ id: newTx.id, success: true }, { status: 201 });
     } catch (error) {
-        console.error('Failed to create transaction:', error);
+        console.error('POST transaction:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function createTransactionSync(db: any, userId: string, data: Record<string, unknown>) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { randomBytes } = require('crypto');
+    const id = 'c' + randomBytes(11).toString('hex');
+    const ts = new Date().toISOString();
+    db.prepare(`INSERT INTO NTransaction (id,userId,accountId,categoryId,amount,type,date,description,tags,msiPlanId,isParent,parentId,toAccountId,recurringPaymentId,isDeductible,createdById,importSource,createdAt,updatedAt)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,null,?,null,null,?,?)`)
+        .run(id, userId, data.accountId, data.categoryId, data.amount, data.type, data.date,
+             data.description, data.tags, data.msiPlanId, data.isParent, data.parentId,
+             data.toAccountId, data.isDeductible, data.importSource || null, ts, ts);
+    return { id };
+}
+
+// PATCH /api/transactions?id=... — update a transaction
 export async function PATCH(request: Request) {
+    const userId = await getUserId();
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    if (!id) return NextResponse.json({ error: 'Transaction ID required' }, { status: 400 });
+
     try {
-        const cookieStore = await cookies();
-        const userId = cookieStore.get('userId')?.value;
-        if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        const body = await request.json();
+        const { description, amount, type, accountId, categoryId, date, toAccountId, tags, isDeductible } = body;
 
-        const { searchParams } = new URL(request.url);
-        const id = searchParams.get('id');
-        if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
+        const existing = await getTransactionById(id, userId);
+        if (!existing) return NextResponse.json({ error: 'Transaction not found' }, { status: 404 });
 
-        const { date, description, amount, type, accountId, categoryId, toAccountId } = await request.json();
-        if (!amount || !type || !accountId) {
-            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
-        }
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const path = require('path');
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const Database = require('better-sqlite3');
+        const dbPath = (process.env.DATABASE_URL ?? '').replace('file:', '') ||
+            path.join(process.cwd(), 'prisma', 'finanzas.db');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const db: any = Database(dbPath);
+        db.pragma('foreign_keys = ON');
 
-        const userRef = db.collection('users').doc(userId);
-        const txRef = userRef.collection('transactions').doc(id);
-        const txDoc = await txRef.get();
-        if (!txDoc.exists) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+        const tx = db.transaction(() => {
+            const oldAmount  = Number(existing.amount);
+            const oldType    = existing.type;
+            const oldAccId   = existing.accountId;
+            const oldToAccId = existing.toAccountId;
 
-        const old = txDoc.data()!;
-        const oldAmount = Number(old.amount);
-        const newAmount = Number(amount);
-        const txDate = new Date(date || new Date()).toISOString();
-
-        const oldAccountRef = userRef.collection('accounts').doc(old.accountId);
-        const oldToAccountRef = old.toAccountId ? userRef.collection('accounts').doc(old.toAccountId) : null;
-        const newAccountRef = userRef.collection('accounts').doc(accountId);
-        const newToAccountRef = toAccountId ? userRef.collection('accounts').doc(toAccountId) : null;
-
-        await db.runTransaction(async (t) => {
-            // 1. Revert old balance effect
-            switch (old.type) {
-                case 'INCOME':
-                    t.update(oldAccountRef, { balance: admin.firestore.FieldValue.increment(-oldAmount) });
-                    break;
-                case 'EXPENSE':
-                case 'MSI_CHARGE':
-                    t.update(oldAccountRef, { balance: admin.firestore.FieldValue.increment(oldAmount) });
-                    break;
-                case 'TRANSFER':
-                    t.update(oldAccountRef, { balance: admin.firestore.FieldValue.increment(oldAmount) });
-                    if (oldToAccountRef) t.update(oldToAccountRef, { balance: admin.firestore.FieldValue.increment(-oldAmount) });
-                    break;
-                case 'PAGO_TARJETA':
-                    t.update(oldAccountRef, { balance: admin.firestore.FieldValue.increment(-oldAmount) });
-                    if (oldToAccountRef) t.update(oldToAccountRef, { balance: admin.firestore.FieldValue.increment(oldAmount) });
-                    break;
+            // Revert old balance effect
+            if (!existing.isParent) {
+                if (oldType === 'INCOME') {
+                    db.prepare('UPDATE Account SET balance = balance - ? WHERE id = ? AND userId = ?').run(oldAmount, oldAccId, userId);
+                } else if (['EXPENSE', 'MSI_CHARGE', 'PAGO_TARJETA'].includes(oldType)) {
+                    db.prepare('UPDATE Account SET balance = balance + ? WHERE id = ? AND userId = ?').run(oldAmount, oldAccId, userId);
+                } else if (oldType === 'TRANSFER' && oldToAccId) {
+                    db.prepare('UPDATE Account SET balance = balance + ? WHERE id = ? AND userId = ?').run(oldAmount, oldAccId, userId);
+                    db.prepare('UPDATE Account SET balance = balance - ? WHERE id = ? AND userId = ?').run(oldAmount, oldToAccId, userId);
+                }
             }
 
-            // 2. Apply new balance effect
-            switch (type) {
-                case 'INCOME':
-                    t.update(newAccountRef, { balance: admin.firestore.FieldValue.increment(newAmount) });
-                    break;
-                case 'EXPENSE':
-                case 'MSI_CHARGE':
-                    t.update(newAccountRef, { balance: admin.firestore.FieldValue.increment(-newAmount) });
-                    break;
-                case 'TRANSFER':
-                    t.update(newAccountRef, { balance: admin.firestore.FieldValue.increment(-newAmount) });
-                    if (newToAccountRef) t.update(newToAccountRef, { balance: admin.firestore.FieldValue.increment(newAmount) });
-                    break;
-                case 'PAGO_TARJETA':
-                    t.update(newAccountRef, { balance: admin.firestore.FieldValue.increment(newAmount) });
-                    if (newToAccountRef) t.update(newToAccountRef, { balance: admin.firestore.FieldValue.increment(-newAmount) });
-                    break;
+            // Apply new balance effect
+            const newAmount  = amount ? Math.abs(parseFloat(amount)) : oldAmount;
+            const newType    = type ?? oldType;
+            const newAccId   = accountId ?? oldAccId;
+            const newToAccId = toAccountId !== undefined ? toAccountId : oldToAccId;
+
+            if (!existing.isParent) {
+                if (newType === 'INCOME') {
+                    db.prepare('UPDATE Account SET balance = balance + ? WHERE id = ? AND userId = ?').run(newAmount, newAccId, userId);
+                } else if (['EXPENSE', 'MSI_CHARGE', 'PAGO_TARJETA'].includes(newType)) {
+                    db.prepare('UPDATE Account SET balance = balance - ? WHERE id = ? AND userId = ?').run(newAmount, newAccId, userId);
+                } else if (newType === 'TRANSFER' && newToAccId) {
+                    db.prepare('UPDATE Account SET balance = balance - ? WHERE id = ? AND userId = ?').run(newAmount, newAccId, userId);
+                    db.prepare('UPDATE Account SET balance = balance + ? WHERE id = ? AND userId = ?').run(newAmount, newToAccId, userId);
+                }
             }
 
-            // 3. Update transaction document
-            t.update(txRef, {
-                accountId, categoryId: categoryId || null, amount: newAmount,
-                type, date: txDate, description: description || '',
-                updatedAt: new Date().toISOString(),
-                toAccountId: toAccountId || null,
-            });
+            // Update transaction
+            db.prepare(`UPDATE NTransaction SET
+                description=?, amount=?, type=?, accountId=?, categoryId=?,
+                date=?, toAccountId=?, tags=?, isDeductible=?, updatedAt=datetime('now')
+                WHERE id=? AND userId=?`)
+                .run(
+                    description ?? existing.description,
+                    newAmount, newType, newAccId,
+                    categoryId !== undefined ? categoryId : existing.categoryId,
+                    date ? new Date(date).toISOString().slice(0, 10) : existing.date,
+                    newToAccId,
+                    tags !== undefined ? JSON.stringify(tags) : existing.tags,
+                    isDeductible !== undefined ? (isDeductible ? 1 : 0) : existing.isDeductible,
+                    id, userId
+                );
         });
 
+        tx();
+        db.close();
         return NextResponse.json({ success: true });
     } catch (error) {
-        console.error('Failed to update transaction:', error);
+        console.error('PATCH transaction:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
 
+// DELETE /api/transactions?id=... or ?all=true
 export async function DELETE(request: Request) {
-    try {
-        const cookieStore = await cookies();
-        const userId = cookieStore.get('userId')?.value;
-        if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const userId = await getUserId();
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-        const { searchParams } = new URL(request.url);
-        const id = searchParams.get('id');
-        const deleteAll = searchParams.get('all') === 'true';
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    const deleteAll = searchParams.get('all') === 'true';
+
+    try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const path = require('path');
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const Database = require('better-sqlite3');
+        const dbPath = (process.env.DATABASE_URL ?? '').replace('file:', '') ||
+            path.join(process.cwd(), 'prisma', 'finanzas.db');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const db: any = Database(dbPath);
 
         if (deleteAll) {
-            const txRef = db.collection('users').doc(userId).collection('transactions');
-            const snapshot = await txRef.get();
-            const batch = db.batch();
-            snapshot.docs.forEach(doc => batch.delete(doc.ref));
-            const accountsSnap = await db.collection('users').doc(userId).collection('accounts').get();
-            accountsSnap.docs.forEach(doc => batch.update(doc.ref, { balance: 0, updatedAt: new Date().toISOString() }));
-            await batch.commit();
-            return NextResponse.json({ success: true, count: snapshot.size });
+            const result = db.prepare('DELETE FROM NTransaction WHERE userId = ?').run(userId);
+            db.close();
+            return NextResponse.json({ success: true, deleted: result.changes });
         }
 
-        if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
+        if (!id) {
+            db.close();
+            return NextResponse.json({ error: 'Transaction ID required' }, { status: 400 });
+        }
 
-        const txRef = db.collection('users').doc(userId).collection('transactions').doc(id);
-        const doc = await txRef.get();
-        if (!doc.exists) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+        const existing = db.prepare('SELECT * FROM NTransaction WHERE id = ? AND userId = ?').get(id, userId);
+        if (!existing) {
+            db.close();
+            return NextResponse.json({ error: 'Transaction not found' }, { status: 404 });
+        }
 
-        const data = doc.data()!;
-        const amount = data.amount || 0;
-        const type = data.type;
-        const accountId = data.accountId;
-        const toAccountId = data.toAccountId;
-
-        const userRef = db.collection('users').doc(userId);
-        const accountRef = userRef.collection('accounts').doc(accountId);
-        const toAccountRef = toAccountId ? userRef.collection('accounts').doc(toAccountId) : null;
-
-        await db.runTransaction(async (transaction) => {
-            transaction.delete(txRef);
-            switch (type) {
-                case 'INCOME':
-                    transaction.update(accountRef, { balance: admin.firestore.FieldValue.increment(-amount) });
-                    break;
-                case 'EXPENSE':
-                case 'MSI_CHARGE':
-                    transaction.update(accountRef, { balance: admin.firestore.FieldValue.increment(amount) });
-                    break;
-                case 'TRANSFER':
-                    transaction.update(accountRef, { balance: admin.firestore.FieldValue.increment(amount) });
-                    if (toAccountRef) transaction.update(toAccountRef, { balance: admin.firestore.FieldValue.increment(-amount) });
-                    break;
-                case 'PAGO_TARJETA':
-                    transaction.update(accountRef, { balance: admin.firestore.FieldValue.increment(-amount) });
-                    if (toAccountRef) transaction.update(toAccountRef, { balance: admin.firestore.FieldValue.increment(amount) });
-                    break;
+        const tx = db.transaction(() => {
+            const amount = Number(existing.amount);
+            if (!existing.isParent) {
+                if (existing.type === 'INCOME') {
+                    db.prepare('UPDATE Account SET balance = balance - ? WHERE id = ? AND userId = ?').run(amount, existing.accountId, userId);
+                } else if (['EXPENSE', 'MSI_CHARGE', 'PAGO_TARJETA'].includes(existing.type)) {
+                    db.prepare('UPDATE Account SET balance = balance + ? WHERE id = ? AND userId = ?').run(amount, existing.accountId, userId);
+                } else if (existing.type === 'TRANSFER' && existing.toAccountId) {
+                    db.prepare('UPDATE Account SET balance = balance + ? WHERE id = ? AND userId = ?').run(amount, existing.accountId, userId);
+                    db.prepare('UPDATE Account SET balance = balance - ? WHERE id = ? AND userId = ?').run(amount, existing.toAccountId, userId);
+                }
             }
+            db.prepare('DELETE FROM NTransaction WHERE id = ? AND userId = ?').run(id, userId);
         });
 
+        tx();
+        db.close();
         return NextResponse.json({ success: true });
     } catch (error) {
-        console.error('Failed to delete transaction(s):', error);
+        console.error('DELETE transaction:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }

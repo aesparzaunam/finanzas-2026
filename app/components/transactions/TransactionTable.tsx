@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import styles from './transactions.module.css';
-import { StyledSpan } from '../ui/StyledElements';
+import { Pencil, Trash2 } from 'lucide-react';
+import styles from '../../transactions/transactions.module.css';
 import TransactionForm from './TransactionForm';
 import TagInput from './TagInput';
 
@@ -30,30 +30,29 @@ export default function TransactionTable({ transactions, onRefresh }: Transactio
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
-    const formatCurrency = (val: number) =>
+    const fmt = (val: number) =>
         new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(val);
 
-    const formatDate = (dateString: string) =>
-        new Date(dateString).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
+    const fmtDate = (d: string) =>
+        new Date(d).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
 
-    const typeLabel = (type: string) => {
+    const typeInfo = (type: string) => {
         switch (type) {
-            case 'INCOME': return { label: 'Ingreso', cls: styles.income };
-            case 'EXPENSE': return { label: 'Gasto', cls: styles.expense };
-            case 'TRANSFER': return { label: 'Transfer', cls: styles.transfer };
-            case 'PAGO_TARJETA': return { label: 'Pago TDC', cls: styles.transfer };
-            case 'MSI_CHARGE': return { label: 'MSI', cls: styles.expense };
-            default: return { label: type, cls: '' };
+            case 'INCOME':      return { label: 'Ingreso',   cls: styles.income };
+            case 'EXPENSE':     return { label: 'Gasto',     cls: styles.expense };
+            case 'TRANSFER':    return { label: 'Transfer',  cls: styles.transfer };
+            case 'PAGO_TARJETA':return { label: 'Pago TDC',  cls: styles.transfer };
+            case 'MSI_CHARGE':  return { label: 'MSI',       cls: styles.expense };
+            default:            return { label: type,        cls: '' };
         }
     };
 
-    const amountSign = (type: string) => {
+    const sign = (type: string) => {
         if (type === 'INCOME') return '+';
         if (type === 'TRANSFER' || type === 'PAGO_TARJETA') return '⇆';
-        return '-';
+        return '−';
     };
 
-    // ── Editar ──────────────────────────────────────────
     const handleEdit = async (data: {
         description: string; amount: string; type: string;
         accountId: string; categoryId: string; date: string; toAccountId?: string;
@@ -64,28 +63,17 @@ export default function TransactionTable({ transactions, onRefresh }: Transactio
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data),
         });
-        if (res.ok) {
-            setEditingTx(null);
-            onRefresh();
-        } else {
-            alert('Error al guardar cambios');
-        }
+        if (res.ok) { setEditingTx(null); onRefresh(); }
+        else alert('Error al guardar cambios');
     };
 
-    // ── Eliminar ─────────────────────────────────────────
     const handleDelete = async (id: string) => {
         setDeletingId(id);
         try {
             const res = await fetch(`/api/transactions?id=${id}`, { method: 'DELETE' });
-            if (res.ok) {
-                setConfirmDeleteId(null);
-                onRefresh();
-            } else {
-                alert('Error al eliminar');
-            }
-        } finally {
-            setDeletingId(null);
-        }
+            if (res.ok) { setConfirmDeleteId(null); onRefresh(); }
+            else alert('Error al eliminar');
+        } finally { setDeletingId(null); }
     };
 
     return (
@@ -101,25 +89,38 @@ export default function TransactionTable({ transactions, onRefresh }: Transactio
                             <th>Tipo</th>
                             <th className={styles.tagsCell}>Etiquetas</th>
                             <th className={styles.amountCell}>Monto</th>
-                            <th className={styles.actionsCell}>Acciones</th>
+                            <th className={styles.actionsCell}></th>
                         </tr>
                     </thead>
                     <tbody>
+                        {transactions.length === 0 && (
+                            <tr>
+                                <td colSpan={8} className={styles.centeredCell}>
+                                    <div className={styles.emptyState}>
+                                        <div className={styles.emptyIcon}>📭</div>
+                                        <div className={styles.emptyTitle}>Sin movimientos</div>
+                                        <div className={styles.emptyDesc}>
+                                            No hay transacciones que coincidan con los filtros seleccionados.
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        )}
                         {transactions.map(tx => {
-                            const { label, cls } = typeLabel(tx.type);
+                            const { label, cls } = typeInfo(tx.type);
                             return (
                                 <tr key={tx.id} className={styles.tableRow}>
-                                    <td className={styles.dateCell}>{formatDate(tx.date)}</td>
+                                    <td className={styles.dateCell}>{fmtDate(tx.date)}</td>
                                     <td className={styles.descCell} title={tx.description}>
                                         {tx.description || '—'}
                                     </td>
                                     <td className={styles.categoryCell}>
-                                        <StyledSpan
+                                        <span
                                             className={styles.categoryName}
-                                            applyStyle={{ borderLeftColor: tx.category?.color || 'var(--text-secondary)' }}
+                                            style={{ borderLeftColor: tx.category?.color || 'var(--on-surface-variant)' } as React.CSSProperties}
                                         >
                                             {tx.category?.icon} {tx.category?.name || 'Sin categoría'}
-                                        </StyledSpan>
+                                        </span>
                                     </td>
                                     <td className={styles.accountCell}>{tx.account?.name || '—'}</td>
                                     <td>
@@ -133,7 +134,7 @@ export default function TransactionTable({ transactions, onRefresh }: Transactio
                                         />
                                     </td>
                                     <td className={`${styles.amountCell} ${cls}`}>
-                                        {amountSign(tx.type)}{formatCurrency(Number(tx.amount))}
+                                        {sign(tx.type)}{fmt(Number(tx.amount))}
                                     </td>
                                     <td className={styles.actionsCell}>
                                         <button
@@ -142,7 +143,7 @@ export default function TransactionTable({ transactions, onRefresh }: Transactio
                                             aria-label="Editar movimiento"
                                             onClick={() => setEditingTx(tx)}
                                         >
-                                            ✏️
+                                            <Pencil size={13} strokeWidth={2.5} />
                                         </button>
                                         <button
                                             className={styles.deleteBtn}
@@ -150,36 +151,23 @@ export default function TransactionTable({ transactions, onRefresh }: Transactio
                                             aria-label="Eliminar movimiento"
                                             onClick={() => setConfirmDeleteId(tx.id)}
                                         >
-                                            🗑️
+                                            <Trash2 size={13} strokeWidth={2.5} />
                                         </button>
                                     </td>
                                 </tr>
                             );
                         })}
-                        {transactions.length === 0 && (
-                            <tr>
-                                <td colSpan={8} className={styles.centeredCell}>
-                                    No se encontraron transacciones
-                                </td>
-                            </tr>
-                        )}
                     </tbody>
                 </table>
             </div>
 
-            {/* ── Modal de Edición ── */}
+            {/* ── Modal Edición ── */}
             {editingTx && (
                 <div className={styles.modalOverlay}>
                     <div className={styles.modalContent}>
                         <div className={styles.modalHeader}>
-                            <h2 className={styles.modalTitle}>✏️ Editar Movimiento</h2>
-                            <button
-                                className={styles.modalCloseBtn}
-                                onClick={() => setEditingTx(null)}
-                                aria-label="Cerrar"
-                            >
-                                ✕
-                            </button>
+                            <h2 className={styles.modalTitle}>Editar Movimiento</h2>
+                            <button className={styles.modalCloseBtn} onClick={() => setEditingTx(null)} aria-label="Cerrar">✕</button>
                         </div>
                         <TransactionForm
                             initialValues={{
@@ -195,32 +183,25 @@ export default function TransactionTable({ transactions, onRefresh }: Transactio
                             onCancel={() => setEditingTx(null)}
                             submitLabel="Guardar Cambios"
                         />
-                        {/* ── Tags ── */}
                         <div className={styles.tagEditSection}>
                             <label className={styles.tagEditLabel}>🏷️ Etiquetas</label>
-                            <TagInput
-                                transactionId={editingTx.id}
-                                initialTags={editingTx.tags || []}
-                            />
+                            <TagInput transactionId={editingTx.id} initialTags={editingTx.tags || []} />
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* ── Confirmación de Eliminar ── */}
+            {/* ── Confirm Delete ── */}
             {confirmDeleteId && (
                 <div className={styles.modalOverlay}>
                     <div className={styles.confirmBox}>
                         <div className={styles.confirmIcon}>🗑️</div>
                         <h3 className={styles.confirmTitle}>¿Eliminar movimiento?</h3>
                         <p className={styles.confirmText}>
-                            Esta acción revertirá el efecto en el saldo de la cuenta. No se puede deshacer.
+                            Esta acción revertirá el efecto en el saldo de la cuenta y no se puede deshacer.
                         </p>
                         <div className={styles.confirmBtns}>
-                            <button
-                                className={styles.confirmCancelBtn}
-                                onClick={() => setConfirmDeleteId(null)}
-                            >
+                            <button className={styles.confirmCancelBtn} onClick={() => setConfirmDeleteId(null)}>
                                 Cancelar
                             </button>
                             <button

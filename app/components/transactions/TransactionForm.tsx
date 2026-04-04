@@ -51,9 +51,34 @@ export default function TransactionForm({ initialValues, onCheckSubmit, onCancel
     const [date, setDate] = useState(initialValues?.date || new Date().toISOString().split('T')[0]);
     const [toAccountId, setToAccountId] = useState(initialValues?.toAccountId || '');
 
-    const [accounts, setAccounts] = useState<Account[]>([]);
+    const [accounts, setAccounts]     = useState<Account[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
-    const [submitting, setSubmitting] = useState(false);
+    const [submitting, setSubmitting]  = useState(false);
+    const [aiTitleLoading, setAiTitleLoading] = useState(false);
+    const [aiTitleHint, setAiTitleHint]       = useState('');
+
+    // Auto-título: solo cuando descripción vacía y hay monto + tipo
+    const canSuggestTitle = !description.trim() && !!amount && (type === 'EXPENSE' || type === 'INCOME');
+
+    const handleAiTitle = async () => {
+        if (!canSuggestTitle || aiTitleLoading) return;
+        setAiTitleLoading(true);
+        setAiTitleHint('');
+        try {
+            const res = await fetch('/api/transactions/ai-autotitle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ amount: Number(amount), type, categoryId, accountId, date }),
+            });
+            if (res.ok) {
+                const data = await res.json();
+                if (data.title) {
+                    setAiTitleHint(data.title);
+                }
+            }
+        } catch { /* silencioso */ }
+        finally { setAiTitleLoading(false); }
+    };
 
     // ── #12 Autocompletado de Categorías ────────────────────────
     const { suggestions: catSuggestions, acceptSuggestion, dismiss: dismissSuggestion } = useCategoryAutocomplete(
@@ -162,15 +187,55 @@ export default function TransactionForm({ initialValues, onCheckSubmit, onCancel
                 {/* Description */}
                 <div className={formStyles.inputGroup}>
                     <label className={formStyles.label} htmlFor="tx-description">Descripción</label>
-                    <input
-                        id="tx-description"
-                        className={formStyles.input}
-                        value={description}
-                        onChange={e => setDescription(e.target.value)}
-                        placeholder="ej. Supermercado, Nómina, etc."
-                        required
-                        autoComplete="off"
-                    />
+                    <div className={styles.descInputRow}>
+                        <input
+                            id="tx-description"
+                            className={formStyles.input}
+                            value={description}
+                            onChange={e => { setDescription(e.target.value); setAiTitleHint(''); }}
+                            placeholder="ej. Supermercado, Nómina, etc."
+                            required
+                            autoComplete="off"
+                        />
+                        {/* Botón auto-título IA */}
+                        {canSuggestTitle && (
+                            <button
+                                type="button"
+                                className={styles.aiTitleBtn}
+                                onClick={handleAiTitle}
+                                disabled={aiTitleLoading}
+                                title="Sugerir nombre con IA"
+                                aria-label="Sugerir descripción con IA"
+                                id="tx-ai-title-btn"
+                            >
+                                {aiTitleLoading ? '⟳' : '✨'}
+                            </button>
+                        )}
+                    </div>
+                    {/* Sugerencia de título IA */}
+                    {aiTitleHint && (
+                        <div className={styles.aiTitleBanner}>
+                            <span className={styles.aiTitleIcon}>✨</span>
+                            <span className={styles.aiTitleText}>
+                                ¿Usar <strong>&ldquo;{aiTitleHint}&rdquo;</strong>?
+                            </span>
+                            <button
+                                type="button"
+                                className={styles.aiTitleAccept}
+                                onClick={() => { setDescription(aiTitleHint); setAiTitleHint(''); }}
+                            >
+                                Sí
+                            </button>
+                            <button
+                                type="button"
+                                className={styles.catSuggestionDismiss}
+                                onClick={() => setAiTitleHint('')}
+                                aria-label="Ignorar sugerencia de título"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                    )}
                     {/* ── Sugerencia de categoría ── */}
                     {showCatSuggestion && (
                         <div className={styles.catSuggestionBanner}>

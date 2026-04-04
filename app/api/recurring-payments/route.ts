@@ -1,96 +1,81 @@
+import { getUserId } from '@/app/lib/api-utils';
 import { NextResponse } from 'next/server';
-import { db } from '@/app/lib/firebase';
-import { getUserId, unauthorizedResponse, missingFieldsResponse, internalErrorResponse, notFoundResponse } from '@/app/lib/api-utils';
-import { RecurringPayment, RecurringFrequency } from '@/app/lib/types';
+import {
+    getRecurringPayments, getRecurringPaymentById,
+    createRecurringPayment, updateRecurringPayment, deleteRecurringPayment
+} from '@/app/lib/db';
 
 export async function GET() {
-    try {
-        const userId = await getUserId();
-        if (!userId) return unauthorizedResponse();
+    const userId = await getUserId();
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-        const snapshot = await db.collection('users').doc(userId).collection('recurring_payments').orderBy('createdAt', 'desc').get();
-        const payments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-        return NextResponse.json(payments);
-    } catch (error) {
-        return internalErrorResponse('GET Recurring Payments', error);
-    }
+    const payments = await getRecurringPayments(userId);
+    return NextResponse.json(payments);
 }
 
 export async function POST(request: Request) {
+    const userId = await getUserId();
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
     try {
-        const userId = await getUserId();
-        if (!userId) return unauthorizedResponse();
-
         const { name, amount, categoryId, accountId, frequency, startDate } = await request.json();
-
         if (!name || amount === undefined || !accountId || !frequency || !startDate) {
-            return missingFieldsResponse(['name', 'amount', 'accountId', 'frequency', 'startDate']);
+            return NextResponse.json({ error: 'Missing required fields: name, amount, accountId, frequency, startDate' }, { status: 400 });
         }
 
-        const nextDate = new Date(startDate);
-        const paymentRef = db.collection('users').doc(userId).collection('recurring_payments').doc();
-        
-        const paymentData: RecurringPayment = {
-            id: paymentRef.id,
-            userId,
+        const payment = await createRecurringPayment(userId, {
             name,
             amount: Number(amount),
             categoryId: categoryId || null,
             accountId,
-            frequency: frequency as RecurringFrequency,
-            startDate: new Date(startDate).toISOString(),
-            nextPaymentDate: nextDate.toISOString(),
+            frequency,
+            startDate: new Date(startDate).toISOString().slice(0, 10),
+            nextPaymentDate: new Date(startDate).toISOString().slice(0, 10),
             status: 'ACTIVE',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        };
-
-        await paymentRef.set(paymentData);
-        return NextResponse.json(paymentData, { status: 201 });
+        });
+        return NextResponse.json(payment, { status: 201 });
     } catch (error) {
-        return internalErrorResponse('POST Recurring Payment', error);
+        console.error('POST Recurring:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
 
 export async function PUT(request: Request) {
+    const userId = await getUserId();
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
     try {
-        const userId = await getUserId();
-        if (!userId) return unauthorizedResponse();
+        const { id, name, amount, categoryId, accountId, frequency, nextPaymentDate, status } = await request.json();
+        if (!id) return NextResponse.json({ error: 'ID is required' }, { status: 400 });
 
-        const { id, ...data } = await request.json();
-        if (!id) return missingFieldsResponse(['id']);
+        const existing = await getRecurringPaymentById(id, userId);
+        if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-        const paymentRef = db.collection('users').doc(userId).collection('recurring_payments').doc(id);
-        const doc = await paymentRef.get();
-        if (!doc.exists) return notFoundResponse('Recurring Payment');
-
-        const updateData = {
-            ...data,
-            updatedAt: new Date().toISOString()
-        };
-
-        await paymentRef.update(updateData);
-        return NextResponse.json({ id, ...doc.data(), ...updateData });
+        const updated = await updateRecurringPayment(id, userId, {
+            name: name ?? existing.name,
+            amount: amount !== undefined ? Number(amount) : existing.amount,
+            categoryId: categoryId !== undefined ? categoryId : existing.categoryId,
+            accountId: accountId ?? existing.accountId,
+            frequency: frequency ?? existing.frequency,
+            nextPaymentDate: nextPaymentDate ?? existing.nextPaymentDate,
+            status: status ?? existing.status,
+        });
+        return NextResponse.json(updated);
     } catch (error) {
-        return internalErrorResponse('PUT Recurring Payment', error);
+        console.error('PUT Recurring:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
 
 export async function DELETE(request: Request) {
-    try {
-        const userId = await getUserId();
-        if (!userId) return unauthorizedResponse();
+    const userId = await getUserId();
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-        const { searchParams } = new URL(request.url);
-        const id = searchParams.get('id');
-        if (!id) return missingFieldsResponse(['id']);
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    if (!id) return NextResponse.json({ error: 'ID is required' }, { status: 400 });
 
-        const paymentRef = db.collection('users').doc(userId).collection('recurring_payments').doc(id);
-        await paymentRef.delete();
-
-        return NextResponse.json({ success: true });
-    } catch (error) {
-        return internalErrorResponse('DELETE Recurring Payment', error);
-    }
+    const ok = await deleteRecurringPayment(id, userId);
+    if (!ok) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    return NextResponse.json({ success: true });
 }

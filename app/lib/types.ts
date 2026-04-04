@@ -52,6 +52,7 @@ export interface RecurringPayment {
     frequency: RecurringFrequency;
     startDate: string;
     nextPaymentDate: string;
+    lastPaidAt?: string;         // ISO date — last time advance was called
     status: 'ACTIVE' | 'PAUSED' | 'CANCELLED';
     createdAt: string;
     updatedAt: string;
@@ -84,11 +85,13 @@ export interface Category {
     id: string;
     userId: string;
     name: string;
+    type: 'INCOME' | 'EXPENSE';
     icon: string;
     color: string;
     createdAt: string;
     updatedAt: string;
 }
+
 
 export interface Transaction {
     id: string;
@@ -105,7 +108,8 @@ export interface Transaction {
     // Fase 1: trazabilidad y deducibilidad
     createdById?: string;       // userId de quien registró (puede diferir si cuenta es shared)
     isDeductible?: boolean;     // ¿Es deducible de impuestos?
-    toAccountId?: string;       // Para TRANSFER / PAGO_TARJETA
+    toAccountId?: string;           // Para TRANSFER / PAGO_TARJETA
+    recurringPaymentId?: string;    // Vínculo al pago recurrente que originó esta transacción
     createdAt: string;
     updatedAt: string;
 }
@@ -137,4 +141,46 @@ export interface MSIPlan {
     paidMonths: number;
     createdAt: string;
     updatedAt: string;
+}
+
+// ── Finanzas Compartidas ───────────────────────────────────────────────────────
+
+export type HouseholdRole   = 'OWNER' | 'PARTNER';
+export type HouseholdStatus = 'PENDING' | 'ACTIVE' | 'DISSOLVED';
+
+export interface Household {
+    id:             string;
+    ownerUserId:    string;
+    ownerEmail:     string;
+    ownerName:      string;
+    partnerUserId:  string;
+    partnerEmail:   string;
+    partnerName:    string;
+    status:         HouseholdStatus;
+    createdAt:      string;
+    updatedAt:      string;
+}
+
+/** Transacción enriquecida con info del miembro, para la vista combinada del hogar */
+export interface HouseholdTransaction extends Transaction {
+    member:     HouseholdRole;
+    memberName: string;
+}
+
+export interface HouseholdCategoryBreakdown {
+    categoryId:    string;
+    categoryName:  string;
+    categoryIcon:  string;
+    ownerAmount:   number;
+    partnerAmount: number;
+}
+
+export interface HouseholdSummary {
+    month:          string;          // YYYY-MM
+    totalByMember:  { owner: number; partner: number };
+    byCategory:     HouseholdCategoryBreakdown[];
+    topCategories:  string[];
+    narrative:      string;          // texto generado por Ollama
+    ownerName:      string;
+    partnerName:    string;
 }

@@ -1,0 +1,211 @@
+// Prisma schema - SQLite local
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String   @default("")
+  email     String   @unique
+  password  String
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accounts          Account[]
+  categories        Category[]
+  transactions      Transaction[]
+  budgets           Budget[]
+  msiPlans          MsiPlan[]
+  recurringPayments RecurringPayment[]
+  ownedHousehold    Household?  @relation("HouseholdOwner")
+  partnerHousehold  Household?  @relation("HouseholdPartner")
+}
+
+model Account {
+  id                String   @id @default(cuid())
+  userId            String
+  name              String
+  type              String
+  typeLabel         String   @default("")
+  bank              String   @default("")
+  balance           Float    @default(0)
+  currency          String   @default("MXN")
+  isDefault         Boolean  @default(false)
+  isShared          Boolean  @default(false)
+  autoDetected      Boolean  @default(false)
+  billingDay        Int?
+  paymentDay        Int?
+  annualRate        Float?
+  minPayment        Float?
+  interestStartDate String?
+  color             String?
+  icon              String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions      Transaction[]
+  msiPlans          MsiPlan[]
+  recurringPayments RecurringPayment[]
+
+  @@index([userId])
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  type      String
+  icon      String   @default("tag")
+  color     String   @default("#6366f1")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions      Transaction[]
+  budgets           Budget[]
+  msiPlans          MsiPlan[]
+  recurringPayments RecurringPayment[]
+
+  @@index([userId])
+}
+
+model Transaction {
+  id                 String   @id @default(cuid())
+  userId             String
+  accountId          String
+  categoryId         String?
+  amount             Float
+  type               String
+  date               String
+  description        String   @default("")
+  notes              String?
+  tags               String?
+  msiPlanId          String?
+  isParent           Boolean  @default(false)
+  parentId           String?
+  toAccountId        String?
+  recurringPaymentId String?
+  isDeductible       Boolean  @default(false)
+  createdById        String?
+  importSource       String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account  Account   @relation(fields: [accountId], references: [id])
+  category Category? @relation(fields: [categoryId], references: [id])
+
+  @@index([userId])
+  @@index([userId, date])
+  @@index([userId, accountId])
+  @@index([userId, type])
+  @@index([userId, categoryId])
+}
+
+model Budget {
+  id              String   @id @default(cuid())
+  userId          String
+  categoryId      String
+  amount          Float
+  period          String   @default("MONTHLY")
+  enableCarryOver Boolean  @default(false)
+  carryOverAmount Float    @default(0)
+  lastCarryOverAt String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id])
+
+  @@index([userId])
+  @@unique([userId, categoryId])
+}
+
+model MsiPlan {
+  id            String   @id @default(cuid())
+  userId        String
+  accountId     String
+  categoryId    String?
+  totalAmount   Float
+  months        Int
+  monthlyAmount Float
+  startDate     String
+  description   String   @default("")
+  status        String   @default("ACTIVE")
+  paidMonths    Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account  Account   @relation(fields: [accountId], references: [id])
+  category Category? @relation(fields: [categoryId], references: [id])
+
+  @@index([userId])
+}
+
+model RecurringPayment {
+  id              String   @id @default(cuid())
+  userId          String
+  accountId       String
+  categoryId      String?
+  name            String
+  amount          Float
+  frequency       String
+  startDate       String
+  nextPaymentDate String
+  lastPaidAt      String?
+  status          String   @default("ACTIVE")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account  Account   @relation(fields: [accountId], references: [id])
+  category Category? @relation(fields: [categoryId], references: [id])
+
+  @@index([userId])
+}
+
+model Household {
+  id          String   @id @default(cuid())
+  ownerId     String   @unique
+  partnerId   String?  @unique
+  status      String   @default("PENDING")
+  inviteEmail String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner   User  @relation("HouseholdOwner",   fields: [ownerId],   references: [id])
+  partner User? @relation("HouseholdPartner", fields: [partnerId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  body      String
+  isRead    Boolean  @default(false)
+  data      String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model AiChat {
+  id        String   @id @default(cuid())
+  userId    String
+  role      String
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, createdAt])
+}

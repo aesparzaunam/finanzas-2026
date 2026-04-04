@@ -3,54 +3,35 @@
 import { useState } from 'react';
 import { useAuth } from '@/app/context/AuthProvider';
 import Link from 'next/link';
-import { auth, googleProvider, signInWithPopup } from '@/app/lib/firebase-client';
 import Image from 'next/image';
 import styles from '../auth.module.css';
 
 export default function LoginPage() {
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const { login } = useAuth();
 
-    const handleGoogleLogin = async () => {
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
         setError('');
         setLoading(true);
         try {
-            const result = await signInWithPopup(auth, googleProvider);
-            const user = result.user;
-
-            const res = await fetch('/api/auth/google', {
+            const res = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    uid: user.uid,
-                    email: user.email,
-                    name: user.displayName,
-                    photoURL: user.photoURL,
-                }),
+                body: JSON.stringify({ email, password }),
             });
 
+            const data = await res.json();
             if (res.ok) {
-                const userData = await res.json();
-                login(userData);
+                login(data);
             } else {
-                const text = await res.text();
-                let errMsg = 'Google login failed';
-                try {
-                    const data = JSON.parse(text);
-                    errMsg = data.error || data.details || errMsg;
-                } catch {
-                    console.error("Non-JSON API error response:", text);
-                    errMsg = `Server Error (${res.status}): ${text.substring(0, 500)}`;
-                }
-                setError(errMsg);
+                setError(data.error || 'Credenciales inválidas');
             }
-        } catch (err: unknown) {
-            console.error(err);
-            const authError = err as { code?: string, message?: string };
-            if (authError.code !== 'auth/popup-closed-by-user') {
-                setError(authError.message || 'Google Auth Error');
-            }
+        } catch {
+            setError('Error de conexión. Intenta de nuevo.');
         } finally {
             setLoading(false);
         }
@@ -64,27 +45,50 @@ export default function LoginPage() {
                 </div>
                 <h1 className={styles.title}>Mis Finanzas</h1>
 
-                <p className={styles.linkContainer}>
-                    ¿No tienes una cuenta? <Link href="/auth/register">Regístrate</Link>
-                </p>
+                <form className={styles.form} onSubmit={handleSubmit}>
+                    <div className={styles.inputGroup}>
+                        <label className={styles.label} htmlFor="email">Correo electrónico</label>
+                        <input
+                            id="email"
+                            type="email"
+                            className={styles.input}
+                            value={email}
+                            onChange={e => setEmail(e.target.value)}
+                            required
+                            autoComplete="email"
+                            placeholder="tu@correo.com"
+                        />
+                    </div>
 
-                <div className={styles.googleWrapper}>
-                    <p className={styles.googleSubtitle}>
-                        Inicia sesión con tu cuenta de Google para acceder a tu dashboard
-                    </p>
+                    <div className={styles.inputGroup}>
+                        <label className={styles.label} htmlFor="password">Contraseña</label>
+                        <input
+                            id="password"
+                            type="password"
+                            className={styles.input}
+                            value={password}
+                            onChange={e => setPassword(e.target.value)}
+                            required
+                            autoComplete="current-password"
+                            placeholder="••••••••"
+                        />
+                    </div>
 
                     {error && <div className={styles.error} role="alert">{error}</div>}
 
                     <button
-                        type="button"
-                        className={styles.googleButton}
-                        onClick={handleGoogleLogin}
+                        type="submit"
+                        className={styles.button}
                         disabled={loading}
-                        aria-label="Iniciar sesión con Google"
+                        aria-label="Iniciar sesión"
                     >
-                        {loading ? 'Conectando...' : 'Iniciar sesión con Google 🚀'}
+                        {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
                     </button>
-                </div>
+                </form>
+
+                <p className={styles.linkContainer}>
+                    ¿No tienes una cuenta? <Link href="/auth/register">Regístrate</Link>
+                </p>
             </div>
         </div>
     );

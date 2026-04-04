@@ -6,11 +6,13 @@ import MetricCard from './MetricCard';
 import RecentTransactions from './RecentTransactions';
 import styles from './dashboard.module.css';
 
-// Lazy load Recharts (which is quite heavy) to improve initial page load performance
+// Lazy load componentes pesados
 const Charts = dynamic(() => import('../charts/Charts'), {
     ssr: false,
     loading: () => <div className={styles.loadingState}>Cargando visualizaciones...</div>
 });
+const AiInsightCard  = dynamic(() => import('./AiInsightCard'),  { ssr: false });
+const AiNarrativeCard = dynamic(() => import('./AiNarrativeCard'), { ssr: false });
 
 interface DashboardMetrics {
     netWorth: number;
@@ -90,8 +92,14 @@ export default function MetricsGrid() {
             {/* Recent Transactions */}
             <RecentTransactions />
 
+            {/* AI Insight — Consejo mensual generado por Ollama */}
+            <AiInsightCard />
+
             {/* Charts Section */}
             {metrics.history && <Charts history={metrics.history} />}
+
+            {/* AI Narrative — Resumen narrativo individual del mes */}
+            <AiNarrativeCard />
         </div>
     );
 }

@@ -3,10 +3,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
 interface CategorySuggestion {
-    categoryId: string;
+    categoryId:   string;
     categoryName: string;
     categoryIcon: string;
-    score: number;
+    score:        number;
+    source?:      string; // 'history' | 'ai'
 }
 
 interface UseCategoryAutocompleteOptions {
@@ -21,20 +22,41 @@ export function useCategoryAutocomplete(
 ) {
     const { onSelect, debounceMs = 450 } = options;
     const [suggestions, setSuggestions] = useState<CategorySuggestion[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [dismissed, setDismissed] = useState(false);
+    const [loading, setLoading]         = useState(false);
+    const [dismissed, setDismissed]     = useState(false);
     const lastFetched = useRef<string>('');
-    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const timerRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const fetchSuggestions = useCallback(async (query: string) => {
         if (query.length < 3 || lastFetched.current === query) return;
         lastFetched.current = query;
         setLoading(true);
+
         try {
+            // Fase 1: historial (rápido, sin Ollama)
             const res = await fetch(`/api/transactions/suggest-category?q=${encodeURIComponent(query)}`);
-            if (res.ok) {
-                const data: CategorySuggestion[] = await res.json();
-                setSuggestions(data.filter(s => s.categoryId !== currentCategoryId));
+            if (!res.ok) return;
+
+            const data: CategorySuggestion[] = await res.json();
+            const filtered = data.filter(s => s.categoryId !== currentCategoryId);
+            setSuggestions(filtered);
+
+            // Fase 2: fallback IA si historial tiene < 2 resultados con score >= 2
+            const highConf = filtered.filter(s => s.score >= 2);
+            if (highConf.length < 2) {
+                const aiRes = await fetch(
+                    `/api/transactions/suggest-category?q=${encodeURIComponent(query)}&ai=1`
+                );
+                if (aiRes.ok) {
+                    const aiData: CategorySuggestion[] = await aiRes.json();
+                    // Poner resultados IA primero si no están ya en el historial
+                    const aiOnly = aiData.filter(a =>
+                        !filtered.some(f => f.categoryId === a.categoryId) &&
+                        a.categoryId !== currentCategoryId
+                    );
+                    const merged = [...aiOnly, ...filtered].slice(0, 5);
+                    setSuggestions(merged);
+                }
             }
         } catch {
             setSuggestions([]);

@@ -1,28 +1,104 @@
-/* ================================
-   DESIGN SYSTEM - Finanzas Personales
-   ================================ */
+/* ============================================================
+   ANTIGRAVITY DESIGN SYSTEM — "The Kinetic Void"
+   Inspired by Revolut, Nubank, Linear · Deep-Space Fintech
+   ============================================================ */
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+
+/* ── Color Tokens (from Stitch Antigravity Noir palette) ── */
 :root {
+  /* Primary — Electric Blue */
+  --primary:                  #92AAFF;
+  --primary-dim:              #3C6BED;
+  --primary-fixed:            #7e9cff;
+  --primary-fixed-dim:        #698dff;
+  --on-primary:               #002777;
+  --on-primary-fixed:         #000000;
+  --primary-container:        #7e9cff;
+  --on-primary-container:     #001d5d;
+  --inverse-primary:          #1b54d7;
+
+  /* Tertiary — Growth Green */
+  --tertiary:                 #c5ffc9;
+  --tertiary-dim:             #5bf083;
+  --tertiary-fixed:           #6bff8f;
+  --tertiary-fixed-dim:       #5bf083;
+  --tertiary-container:       #6bff8f;
+  --on-tertiary:              #00692c;
+  --on-tertiary-container:    #005f28;
+  --on-tertiary-fixed:        #004a1d;
+  --on-tertiary-fixed-variant: #006a2d;
+
+  /* Secondary — Soft Blue-Gray */
+  --secondary:                #d9e3f6;
+  --secondary-dim:            #cbd5e8;
+  --secondary-fixed:          #d9e3f6;
+  --secondary-fixed-dim:      #cbd5e8;
+  --secondary-container:      #3d4756;
+  --on-secondary:             #485262;
+  --on-secondary-container:   #c7d1e4;
+  --on-secondary-fixed:       #36404f;
+  --on-secondary-fixed-variant: #525c6c;
+
+  /* Error — Risk Red */
+  --error:                    #ff6e84;
+  --error-dim:                #d73357;
+  --error-container:          #a70138;
+  --on-error:                 #490013;
+  --on-error-container:       #ffb2b9;
+
+  /* Surface Hierarchy — The Void */
+  --surface:                  #060e20;
+  --surface-dim:              #060e20;
+  --surface-bright:           #1f2b49;
+  --surface-variant:          #192540;
+  --surface-tint:             #92aaff;
+  --surface-container-lowest: #000000;
+  --surface-container-low:    #091328;
+  --surface-container:        #0f1930;
+  --surface-container-high:   #141f38;
+  --surface-container-highest:#192540;
+  --inverse-surface:          #faf8ff;
+  --inverse-on-surface:       #4d556b;
+
+  /* On-Surface Text */
+  --on-surface:               #dee5ff;
+  --on-surface-variant:       #a3aac4;
+  --on-background:            #dee5ff;
+  --background:               #060e20;
+
+  /* Outline */
+  --outline:                  #6d758c;
+  --outline-variant:          #40485d;
+
+  /* Legacy aliases for components (mapped to Antigravity tokens) */
+  --text-primary:             #dee5ff;
+  --text-secondary:           #a3aac4;
+  --text-muted:               #6d758c;
+  --background-alt:           #091328;
+  --border-light:             #1a2540;
+  --border-default:           #2a3550;
+  --success:                  #5bf083;
+  --success-light:            rgba(91,240,131,0.12);
+  --warning:                  #d9e3f6;
+  --warning-light:            rgba(217,227,246,0.12);
+  --danger:                   #ff6e84;
+  --danger-light:             rgba(255,110,132,0.12);
+
   /* Typography */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 
   /* Font Sizes */
-  --text-xs: 0.75rem;
-  --text-sm: 0.875rem;
+  --text-xs:   0.6875rem; /* label-sm */
+  --text-sm:   0.875rem;
   --text-base: 1rem;
-  --text-lg: 1.125rem;
-  --text-xl: 1.25rem;
-  --text-2xl: 1.5rem;
-  --text-3xl: 1.875rem;
-  --text-4xl: 2.25rem;
-
-  /* Font Weights */
-  --font-normal: 400;
-  --font-medium: 500;
-  --font-semibold: 600;
-  --font-bold: 700;
-  --font-extrabold: 800;
+  --text-lg:   1.125rem;
+  --text-xl:   1.25rem;
+  --text-2xl:  1.5rem;
+  --text-3xl:  1.875rem;
+  --text-4xl:  2.25rem;
+  --text-display: 3.5rem;
 
   /* Spacing Scale */
   --space-1: 0.25rem;
@@ -36,78 +112,90 @@
   --space-12: 3rem;
   --space-16: 4rem;
 
-  /* Colors - Light Mode */
-  --background: #f8fafc;
-  --background-alt: #ffffff;
-  --foreground: #0f172a;
-  --text-primary: #0f172a;
-  --text-secondary: #64748b;
-  --text-muted: #94a3b8;
-
-  /* Brand Colors */
-  --primary: #2563eb;
-  --primary-hover: #1d4ed8;
-  --primary-light: #eff6ff;
-  --primary-dark: #1e40af;
-
-  /* Semantic Colors */
-  --success: #10b981;
-  --success-light: #d1fae5;
-  --success-dark: #059669;
-  --warning: #f59e0b;
-  --warning-light: #fef3c7;
-  --warning-dark: #d97706;
-  --danger: #ef4444;
-  --danger-light: #fee2e2;
-  --danger-dark: #dc2626;
-  --info: #3b82f6;
-  --info-light: #dbeafe;
-
-  /* Borders */
-  --border-light: #e2e8f0;
-  --border-default: #cbd5e1;
-  --border-dark: #94a3b8;
-
-  /* Shadows */
-  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-
-  /* Border Radius */
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
-  --radius-2xl: 1.5rem;
+  /* Border Radius (Design System: XL = 1.5rem for buttons) */
+  --radius-sm:   0.375rem;
+  --radius-md:   0.5rem;
+  --radius-lg:   0.75rem;
+  --radius-xl:   1rem;
+  --radius-2xl:  1.5rem;
   --radius-full: 9999px;
 
+  /* Elevation / Ambient Luminosity (no dirty shadows) */
+  --shadow-ambient: 0 40px 40px rgba(0,0,0,0.4);
+  --shadow-float:   0 40px 80px rgba(0,0,0,0.5);
+  --shadow-glow:    0 0 20px rgba(146,170,255,0.35);
+  --shadow-rise:    0 10px 30px rgba(0,0,0,0.3);
+
+  /* Glass */
+  --glass-bg:     rgba(20,31,56,0.6);
+  --glass-blur:   blur(20px);
+  --glass-border: 1px solid rgba(146,170,255,0.1);
+
   /* Transitions */
-  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-spring: 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  --transition-fast:   150ms cubic-bezier(0.4,0,0.2,1);
+  --transition-base:   200ms cubic-bezier(0.4,0,0.2,1);
+  --transition-slow:   400ms cubic-bezier(0.4,0,0.2,1);
+  --transition-spring: 400ms cubic-bezier(0.34,1.56,0.64,1);
 }
 
-/* Dark Mode */
-.dark, [data-theme='dark'] {
-  --background: #0b0f19; /* Matching Image 1 */
-  --background-alt: #1a2233; /* Cards matching Image 1 */
-  --foreground: #ffffff;
-  --text-primary: #ffffff;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-  --border-light: #252f44;
-  --border-default: #334155;
-  --primary: #2563eb;
-  --primary-light: #2c3e66; /* Subdued blue background for dark cards */
+/* Light mode overrides — complete token set for full contrast */
+.light, [data-theme='light'] {
+  /* Backgrounds */
+  --surface:                  #f4f6fb;
+  --surface-dim:              #e8ecf4;
+  --surface-bright:           #ffffff;
+  --surface-variant:          #e5e9f4;
+  --background:               #f4f6fb;
+  --background-alt:           #ffffff;
+
+  /* Surface containers */
+  --surface-container-lowest: #f9faff;
+  --surface-container-low:    #ffffff;
+  --surface-container:        #eef1f9;
+  --surface-container-high:   #e4e8f3;
+  --surface-container-highest:#d8dded;
+
+  /* Text on surface — HIGH contrast */
+  --on-surface:               #0a1628;   /* near-black navy */
+  --on-surface-variant:       #3a4260;   /* dark slate */
+  --on-background:            #0a1628;
+  --text-primary:             #0a1628;
+  --text-secondary:           #3a4260;
+  --text-muted:               #6b7596;
+
+  /* Primary stays electric blue but darker for contrast on light bg */
+  --primary:                  #3c6bed;   /* primary-dim becomes primary in light */
+  --primary-dim:              #1b54d7;
+  --primary-fixed:            #3c6bed;
+  --on-primary:               #ffffff;
+
+  /* Tertiary (green) */
+  --tertiary-dim:             #00872a;   /* darker green for light bg */
+
+  /* Error */
+  --error:                    #c0143c;   /* darker red for light bg */
+  --error-dim:                #9b0028;
+
+  /* Outline */
+  --outline:                  #8891aa;
+  --outline-variant:          #c0c7d8;
+
+  /* Glass */
+  --glass-bg:                 rgba(255,255,255,0.85);
+
+  /* Border */
+  --border-light:             #dce1ef;
+  --border-default:           #b8c0d8;
+
+  /* Sidebar specific: visible on white bg */
+  --sidebar-link-inactive:    rgba(10,22,40,0.45);
+  --sidebar-link-hover:       rgba(10,22,40,0.85);
+  --sidebar-link-active:      #3c6bed;
+  --sidebar-bg:               #f0f3fa;
+  --sidebar-shadow:           40px 0 40px rgba(0,0,0,0.08);
 }
 
-/* ================================
-   BASE STYLES
-   ================================ */
-
+/* ── Base Reset ── */
 *,
 *::before,
 *::after {
@@ -119,53 +207,45 @@
 html {
   font-size: 16px;
   scroll-behavior: smooth;
+  color-scheme: dark light; /* support both modes */
 }
 
 body {
   font-family: var(--font-sans);
-  font-size: var(--text-base);
+  font-size: var(--text-sm);
   line-height: 1.6;
-  color: var(--text-primary);
-  background: var(--background);
+  color: var(--on-surface);
+  background: var(--surface);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Typography */
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-weight: var(--font-bold);
-  line-height: 1.25;
-  color: var(--text-primary);
+/* Ensure light mode body uses correct color scheme */
+.light body, [data-theme='light'] body {
+  color-scheme: light;
 }
 
-h1 {
-  font-size: var(--text-3xl);
+/* ── Typography — Editorial Authority ── */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-sans);
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--on-surface);
 }
 
-h2 {
-  font-size: var(--text-2xl);
-}
-
-h3 {
-  font-size: var(--text-xl);
-}
-
-h4 {
-  font-size: var(--text-lg);
-}
+h1 { font-size: var(--text-3xl); }
+h2 { font-size: var(--text-2xl); }
+h3 { font-size: var(--text-xl); }
+h4 { font-size: var(--text-lg); }
 
 p {
-  color: var(--text-secondary);
+  color: var(--on-surface-variant);
+  line-height: 1.65;
 }
 
-/* Links */
 a {
   color: inherit;
   text-decoration: none;
@@ -176,22 +256,26 @@ a:hover {
   color: var(--primary);
 }
 
-/* Focus States */
+/* ── Focus States ── */
 :focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
+  border-radius: var(--radius-sm);
 }
 
-/* Selection */
+/* ── Selection ── */
 ::selection {
-  background: var(--primary-light);
-  color: var(--primary-dark);
+  background: rgba(146,170,255,0.25);
+  color: var(--primary-fixed);
 }
 
-/* ================================
-   FORM ELEMENTS
-   ================================ */
+/* ── Scrollbar — Kinetic Style ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: var(--surface-container-high); border-radius: var(--radius-full); }
+::-webkit-scrollbar-thumb:hover { background: var(--primary-dim); }
 
+/* ── Form Elements — The Sunken Well ── */
 input,
 select,
 textarea,
@@ -205,167 +289,133 @@ select,
 textarea {
   width: 100%;
   padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-lg);
-  background: var(--background-alt);
-  color: var(--text-primary);
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  background: var(--surface-container-lowest);
+  color: var(--on-surface);
+  border: none;
+  border-bottom: 1px solid transparent;
+  border-radius: var(--radius-xl);
+  transition: border-color var(--transition-fast);
 }
 
 input:hover,
 select:hover,
 textarea:hover {
-  border-color: var(--border-default);
+  border-bottom-color: var(--outline-variant);
 }
 
 input:focus,
 select:focus,
 textarea:focus {
   outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px var(--primary-light);
+  border-bottom-color: var(--primary-fixed);
+  box-shadow: none;
 }
 
 input::placeholder,
 textarea::placeholder {
-  color: var(--text-muted);
+  color: var(--outline);
 }
 
-/* ================================
-   BUTTONS
-   ================================ */
-
+/* ── Buttons — Kinetic Actions ── */
 button {
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  padding: var(--space-3) var(--space-5);
-  font-weight: var(--font-medium);
-  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-6);
+  font-weight: 700;
+  border-radius: var(--radius-2xl);
   border: none;
-  transition: all var(--transition-fast);
+  transition: all var(--transition-base);
+  letter-spacing: 0.01em;
 }
 
 button:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
-/* ================================
-   CARDS
-   ================================ */
-
+/* ── Card — The Floating Grid ── */
 .card {
-  background: var(--background-alt);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-xl);
+  background: var(--surface-container-low);
+  border-radius: var(--radius-2xl);
   padding: var(--space-6);
-  box-shadow: var(--shadow-sm);
-  transition: transform var(--transition-base), box-shadow var(--transition-base);
+  transition: transform var(--transition-slow), box-shadow var(--transition-slow);
+  /* "No-Line" rule: no border, use tonal layering */
 }
 
 .card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-4px);
 }
 
-/* ================================
-   SCROLLBAR
-   ================================ */
-
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+/* ── Glass Card ── */
+.glass-card {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border-top: var(--glass-border);
+  border-radius: var(--radius-2xl);
 }
 
-::-webkit-scrollbar-track {
-  background: var(--background);
+/* ── Kinetic Mesh / Hero background ── */
+.hero-mesh {
+  background-image:
+    radial-gradient(at 0% 0%, hsla(226,100%,78%,0.15) 0, transparent 50%),
+    radial-gradient(at 100% 0%, hsla(226,76%,58%,0.1) 0, transparent 50%);
 }
 
-::-webkit-scrollbar-thumb {
-  background: var(--border-default);
-  border-radius: var(--radius-full);
+/* ── Glow Animations ── */
+@keyframes kinetic-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 20px rgba(146,170,255,0.3); }
+  50%       { opacity: 0.85; box-shadow: 0 0 35px rgba(146,170,255,0.5); }
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
-}
-
-/* ================================
-   UTILITY CLASSES
-   ================================ */
-
-.text-success {
-  color: var(--success);
-}
-
-.text-warning {
-  color: var(--warning);
-}
-
-.text-danger {
-  color: var(--danger);
-}
-
-.text-muted {
-  color: var(--text-muted);
-}
-
-.bg-success {
-  background: var(--success-light);
-}
-
-.bg-warning {
-  background: var(--warning-light);
-}
-
-.bg-danger {
-  background: var(--danger-light);
-}
-
-/* Animations */
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes pulse {
-
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.5;
-  }
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes slideUp {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
 }
 
-.animate-fadeIn {
-  animation: fadeIn var(--transition-slow) ease-out;
+@keyframes float-glow {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-6px); }
 }
 
-.animate-pulse {
-  animation: pulse 2s infinite;
+.animate-fadeIn   { animation: fadeIn 0.4s ease-out; }
+.animate-slideUp  { animation: slideUp 0.4s ease-out; }
+.animate-float    { animation: float-glow 3s ease-in-out infinite; }
+.animate-pulse    { animation: kinetic-pulse 2.5s ease-in-out infinite; }
+
+/* ── Label Utility (UPPERCASE + tracking) ── */
+.label-sm {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
 }
+
+/* ── Semantic text helpers ── */
+.text-success  { color: var(--tertiary-dim); }
+.text-warning  { color: var(--secondary); }
+.text-danger   { color: var(--error); }
+.text-muted    { color: var(--on-surface-variant); }
+.text-primary  { color: var(--primary); }
+
+/* ── Background helpers ── */
+.bg-success    { background: rgba(91,240,131,0.1); }
+.bg-warning    { background: rgba(217,227,246,0.1); }
+.bg-danger     { background: rgba(255,110,132,0.1); }
+
+/* ── Ghost border fallback (barely visible) ── */
+.ghost-border {
+  border: 1px solid rgba(64,72,93,0.15);
+}
+
+/* ── No-scrollbar utility ── */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

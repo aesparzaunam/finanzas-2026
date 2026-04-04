@@ -249,6 +249,13 @@
   color: var(--text-secondary, rgba(255,255,255,0.5));
 }
 
+.loadingModelHint {
+  font-size: 11px;
+  color: var(--text-secondary, rgba(255,255,255,0.35));
+  margin-top: 2px;
+  letter-spacing: 0.04em;
+}
+
 .spinner {
   width: 40px;
   height: 40px;

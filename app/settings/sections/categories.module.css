@@ -1,0 +1,168 @@
+/* categories.module.css */
+
+.divider {
+    height: 1px;
+    background: var(--outline);
+    opacity: 0.5;
+    margin: 0;
+}
+
+.groupTitle {
+    font-size: var(--text-xs);
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--on-surface-variant);
+    margin: 0 0 8px 0;
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.empty {
+    font-size: var(--text-xs);
+    color: var(--on-surface-variant);
+    padding: 8px 0;
+}
+
+.row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: var(--radius-xl);
+    background: var(--surface-container);
+    transition: background 0.15s;
+}
+
+.row:hover { background: var(--surface-container-highest, rgba(146,170,255,0.06)); }
+
+.catDot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.catIcon {
+    font-size: 13px;
+    color: var(--on-surface-variant);
+    min-width: 20px;
+}
+
+.catName {
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--on-surface);
+    flex: 1;
+}
+
+.rowActions {
+    display: flex;
+    gap: 6px;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.row:hover .rowActions { opacity: 1; }
+
+.iconBtn {
+    padding: 5px;
+    border-radius: var(--radius-lg);
+    border: none;
+    background: transparent;
+    color: var(--on-surface-variant);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    transition: background 0.15s, color 0.15s;
+}
+
+.iconBtn:hover { background: var(--surface-container); color: var(--on-surface); }
+
+.iconBtnDanger:hover { background: rgba(239,68,68,0.1); color: #ef4444; }
+
+/* Form inside categories */
+.formCard {
+    padding: var(--space-4);
+    border-radius: var(--radius-xl);
+    border: 1px solid rgba(146,170,255,0.15);
+    background: var(--surface-container);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    margin-bottom: 4px;
+}
+
+.formTitle {
+    font-size: var(--text-sm);
+    font-weight: 700;
+    color: var(--on-surface);
+    margin: 0;
+}
+
+.formFields {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.formActions {
+    display: flex;
+    gap: var(--space-2);
+}
+
+/* Color swatches */
+.swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.swatch {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.15s, border-color 0.15s;
+    padding: 0;
+}
+
+.swatch:hover { transform: scale(1.2); }
+
+.swatchActive {
+    border-color: white;
+    transform: scale(1.2);
+    box-shadow: 0 0 0 2px rgba(146,170,255,0.5);
+}
+
+/* Icon chips */
+.iconChips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.iconChip {
+    padding: 4px 10px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--outline);
+    background: transparent;
+    color: var(--on-surface-variant);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.iconChip:hover { background: var(--surface-container); color: var(--on-surface); }
+
+.iconChipActive {
+    background: rgba(146,170,255,0.12);
+    border-color: #92aaff;
+    color: #92aaff;
+    font-weight: 700;
+}
