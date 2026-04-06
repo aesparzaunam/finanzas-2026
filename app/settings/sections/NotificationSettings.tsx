@@ -42,7 +42,7 @@ export default function NotificationSettings() {
     return (
         <div className={styles.card}>
             <h2 className={styles.cardTitle}>
-                <Bell size={14} style={{ display: 'inline', marginRight: 6 } as React.CSSProperties} />
+                <Bell size={14} className={styles.inlineIcon} />
                 Notificaciones
             </h2>
 
@@ -61,7 +61,7 @@ export default function NotificationSettings() {
                 </div>
                 {supported && (
                     pushEnabled
-                        ? <span className={styles.statusOk}><BellOff size={14} style={{ display: 'inline' } as React.CSSProperties} /> Activas</span>
+                        ? <span className={styles.statusOk}><BellOff size={14} className={styles.inlineIcon} /> Activas</span>
                         : <button className={styles.btnPrimary} onClick={requestPush}>
                             <Bell size={14} /> Activar
                           </button>
@@ -78,6 +78,7 @@ export default function NotificationSettings() {
                     className={styles.fieldSelect}
                     value={daysAhead}
                     onChange={e => setDaysAhead(Number(e.target.value))}
+                    aria-label="Días de anticipación para avisar antes de pagos recurrentes"
                 >
                     <option value={1}>1 día antes</option>
                     <option value={3}>3 días antes</option>

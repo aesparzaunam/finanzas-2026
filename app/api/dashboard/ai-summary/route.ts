@@ -104,10 +104,11 @@ export async function GET(request: Request) {
         const llmResp = await client.chat.completions.create({
             model,
             temperature: 0.35,
-            max_tokens:  260,
+            max_tokens:  160,           // Reducido: el prompt pide 60-130 palabras
             messages: [
                 { role: 'system', content: buildIndividualNarrativePrompt() },
-                { role: 'user',   content: `Genera el párrafo narrativo con estos datos reales:\n\n${dataContext}` },
+                // /no_think desactiva el modo thinking de Qwen3 → respuesta más rápida
+                { role: 'user',   content: `Datos:\n${dataContext}\n\nEscribe el párrafo narrativo ahora: /no_think` },
             ],
         });
 

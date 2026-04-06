@@ -101,7 +101,8 @@
     overflow-x: auto;
     gap: var(--space-2);
     padding-bottom: 4px;
-    scrollbar-width: none;
+    -ms-overflow-style: none; /* IE/Edge fallback */
+    scrollbar-width: none; /* Firefox; Chrome 121+, Safari not supported — fallback via ::-webkit-scrollbar below */
 }
 
 .tabScrollMobile::-webkit-scrollbar { display: none; }
@@ -221,6 +222,7 @@
     width: 100%;
     transition: border-color 0.15s;
     -webkit-appearance: none;
+    appearance: none;
 }
 
 .fieldInput:focus {
@@ -389,3 +391,110 @@
     margin-right: 3px;
 }
 
+/* ── Utility layout helpers (replaces inline styles in section components) ── */
+
+/* Flex row: space-between + center align (CategorySettings header) */
+.rowHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* Removes border-bottom from cardTitle when next to rowHeader */
+.cardTitleFlat {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+/* Flex column, items end (DataSettings DB info column) */
+.colEnd {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+/* Flex row with small gap (input + button combos) */
+.rowGap {
+    display: flex;
+    gap: 8px;
+}
+
+/* Spacer top (replaces paddingTop: 8) */
+.padTop {
+    padding-top: 8px;
+}
+
+/* Privacy info note — green tint */
+.infoNote {
+    padding: 12px 16px;
+    border-radius: var(--radius-xl);
+    background: rgba(52,211,153,0.06);
+    font-size: var(--text-xs);
+    color: var(--on-surface-variant);
+    line-height: 1.6;
+}
+
+/* Privacy info note — blue tint */
+.infoNoteBlue {
+    padding: 12px 16px;
+    border-radius: var(--radius-xl);
+    background: rgba(146,170,255,0.06);
+    font-size: var(--text-xs);
+    color: var(--on-surface-variant);
+    line-height: 1.6;
+}
+
+/* Danger zone container */
+.dangerZone {
+    margin-top: var(--space-4);
+    padding: var(--space-4);
+    border-radius: var(--radius-xl);
+    border: 1px solid rgba(239,68,68,0.2);
+    background: rgba(239,68,68,0.04);
+}
+
+/* Danger zone header row */
+.dangerZoneHeader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: var(--space-3);
+}
+
+/* Danger zone icon color */
+.dangerIcon {
+    color: #ef4444;
+}
+
+/* Danger zone title text */
+.dangerTitle {
+    font-size: var(--text-sm);
+    font-weight: 700;
+    color: #ef4444;
+}
+
+/* Muted field label (on-surface-variant color) */
+.fieldLabelMuted {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--on-surface-variant);
+}
+
+/* Read-only input appearance */
+.fieldInputReadOnly {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Flex row for icon + toggle + icon (theme switcher) */
+.themeToggleRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Muted icon color */
+.iconMuted {
+    color: var(--on-surface-variant);
+}

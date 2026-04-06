@@ -23,7 +23,7 @@ const DB_PATH = process.env.DATABASE_URL?.replace('file:', '') ??
 
 let _db: ReturnType<typeof Database> | null = null;
 
-function getDb() {
+export function getDb() {
     if (!_db) {
         _db = new Database(DB_PATH);
         // Performance pragmas
@@ -75,7 +75,6 @@ export async function findUserById(id: string): Promise<DbUser | null> {
 }
 
 export async function createUser(data: { name: string; email: string; password: string }): Promise<DbUser> {
-    const db = getDb();
     const id = cuid(); const ts = now();
     stmt('INSERT INTO User (id,name,email,password,createdAt,updatedAt) VALUES (?,?,?,?,?,?)')
         .run(id, data.name, data.email, data.password, ts, ts);
@@ -274,7 +273,6 @@ export async function getBudgetById(id: string, userId: string): Promise<DbBudge
 }
 
 export async function upsertBudget(userId: string, categoryId: string, data: Partial<DbBudget>): Promise<DbBudget> {
-    const db = getDb();
     const existing = stmt('SELECT * FROM Budget WHERE userId = ? AND categoryId = ?').get(userId, categoryId) as DbBudget | undefined;
     if (existing) {
         stmt('UPDATE Budget SET amount=?,period=?,enableCarryOver=?,carryOverAmount=?,lastCarryOverAt=?,updatedAt=? WHERE id=?')

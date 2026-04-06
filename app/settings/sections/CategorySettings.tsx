@@ -84,9 +84,9 @@ export default function CategorySettings() {
 
     return (
         <div className={styles.card}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' } as React.CSSProperties}>
-                <h2 className={styles.cardTitle} style={{ borderBottom: 'none', paddingBottom: 0 } as React.CSSProperties}>
-                    <Tag size={14} style={{ display: 'inline', marginRight: 6 } as React.CSSProperties} />Categorías
+            <div className={styles.rowHeader}>
+                <h2 className={`${styles.cardTitle} ${styles.cardTitleFlat}`}>
+                    <Tag size={14} className={styles.inlineIcon} />Categorías
                 </h2>
                 <button
                     className={styles.btnPrimary}
@@ -132,7 +132,7 @@ export default function CategorySettings() {
             )}
 
             {/* Restaurar por defecto */}
-            <div style={{ paddingTop: 8 } as React.CSSProperties}>
+            <div className={styles.padTop}>
                 <button
                     className={styles.btnSecondary}
                     onClick={async () => {
@@ -178,7 +178,7 @@ function CategoryGroup({
                             </div>
                         ) : (
                             <div className={catStyles.row}>
-                                <div className={catStyles.catDot} style={{ background: cat.color } as React.CSSProperties} />
+                                <div className={catStyles.catDot} style={{ '--cat-color': cat.color } as React.CSSProperties} />
                                 <span className={catStyles.catIcon}>{cat.icon}</span>
                                 <span className={catStyles.catName}>{cat.name}</span>
                                 <div className={catStyles.rowActions}>
@@ -238,7 +238,7 @@ function CategoryForm({ form, setForm, error }: {
                         <button
                             key={c}
                             className={form.color === c ? `${catStyles.swatch} ${catStyles.swatchActive}` : catStyles.swatch}
-                            style={{ background: c } as React.CSSProperties}
+                            style={{ '--swatch-color': c } as React.CSSProperties}
                             onClick={() => setForm({ ...form, color: c })}
                             aria-label={`Color ${c}`}
                         />

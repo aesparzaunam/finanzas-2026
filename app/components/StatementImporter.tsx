@@ -81,10 +81,10 @@ export default function StatementImporter({ accounts, categories, onImportComple
     setError(null);
     setIsLoading(true);
 
-    // Timeout extendido: 150 s para inferencia local (modelo 27B puede tardar)
+    // Timeout: 280s (el modelo 27B puede tardar 2-4 min en CPU)
     const controller = new AbortController();
     abortControllerRef.current = controller;
-    const timeoutId = setTimeout(() => controller.abort(), 150_000);
+    const timeoutId = setTimeout(() => controller.abort(), 280_000);
 
     try {
       const formData = new FormData();
@@ -118,7 +118,7 @@ export default function StatementImporter({ accounts, categories, onImportComple
     } catch (err: unknown) {
       clearTimeout(timeoutId);
       if ((err as { name?: string }).name === 'AbortError') {
-        setError('La solicitud tardó demasiado. Asegúrate de que Ollama está corriendo y el modelo está descargado.');
+        setError('El modelo tardó demasiado en responder (>4 min). El PDF puede ser muy grande o Ollama está ocupado. Intenta con un PDF más pequeño o espera a que Ollama finalice otra tarea.');
       } else {
         setError(err instanceof Error ? err.message : 'Error procesando archivo');
       }
@@ -176,19 +176,41 @@ export default function StatementImporter({ accounts, categories, onImportComple
           date: tx.date,
           description: tx.description,
           amount: tx.amount,
-          type: tx.type === 'INCOME' ? 'INCOME' : 'EXPENSE',
+          type: tx.type === 'INCOME' ? 'INCOME' : (tx.isMSI ? 'MSI_CHARGE' : 'EXPENSE'),
           accountId: selectedAccountId,
           // Prioridad: categoría elegida por fila > defaultCategoryId
           categoryId: rowCategories[idx] || defaultCategoryId || null,
         };
 
-        const res = await fetch('/api/transactions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
+        if (tx.isMSI) {
+           const startDateOffset = new Date(tx.date);
+           if (tx.msiCurrentMonth && tx.msiCurrentMonth > 1) {
+              startDateOffset.setMonth(startDateOffset.getMonth() - (tx.msiCurrentMonth - 1));
+           }
 
-        if (res.ok) successCount++;
+           const msiPayload = {
+              totalAmount: tx.msiTotalAmount || tx.amount * (tx.msiTotalMonths || 12),
+              months: tx.msiTotalMonths || 12,
+              accountId: selectedAccountId,
+              description: tx.description,
+              startDate: startDateOffset.toISOString(),
+              categoryId: payload.categoryId,
+              isImport: true
+           };
+           const res = await fetch('/api/msi', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(msiPayload),
+           });
+           if (res.ok) successCount++;
+        } else {
+           const res = await fetch('/api/transactions', {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify(payload),
+           });
+           if (res.ok) successCount++;
+        }
         // silent fail - user can retry individual transactions
       } catch {
         // silent fail
@@ -477,7 +499,19 @@ export default function StatementImporter({ accounts, categories, onImportComple
     </div>
 
     {/* ── Modal Crear Plan MSI ── */}
-    {msiTx && <MsiCreateModal tx={msiTx.tx} accounts={accounts} onClose={() => setMsiTx(null)} />}
+    {msiTx && <MsiCreateModal
+        tx={msiTx.tx}
+        accounts={accounts}
+        onClose={() => setMsiTx(null)}
+        onCreated={() => {
+            setRowSelections(prev => {
+                const next = { ...prev };
+                delete next[msiTx.idx];
+                return next;
+            });
+            setMsiTx(null);
+        }}
+    />}
     </>
   );
 }
@@ -488,10 +522,12 @@ function MsiCreateModal({
   tx,
   accounts,
   onClose,
+  onCreated,
 }: {
   tx: ParsedTransaction;
   accounts: { id: string; name: string; type: string }[];
   onClose: () => void;
+  onCreated: () => void;
 }) {
   const [description, setDescription] = useState(tx.description);
   const [totalAmount, setTotalAmount] = useState(String(tx.msiTotalAmount || tx.amount));
@@ -518,8 +554,8 @@ function MsiCreateModal({
         }),
       });
       if (res.ok) {
-        onClose();
         alert(`✅ Plan MSI creado: ${months} meses de $${(Number(totalAmount) / Number(months)).toFixed(2)}`);
+        onCreated();
       } else {
         const err = await res.json();
         alert('Error: ' + (err.error || 'No se pudo crear el plan'));

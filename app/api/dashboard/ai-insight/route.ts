@@ -158,9 +158,10 @@ export async function GET() {
 
         return NextResponse.json({ ...insight, cached: false });
     } catch (error) {
-        console.error('[ai-insight] Error:', error);
+        console.error('[ai-insight] Error generando consejo:', error instanceof Error ? error.message : error);
+        // Fallback genérico: no mostrar mensaje de error técnico al usuario
         return NextResponse.json({
-            insight: 'No se pudo generar el consejo este mes. Asegúrate de que Ollama está activo.',
+            insight: 'Este mes aún no hay suficientes datos para generar un consejo personalizado. ¡Agrega tus primeras transacciones!',
             type: 'TIP',
             icon: '💡',
             cached: false,

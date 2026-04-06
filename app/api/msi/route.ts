@@ -2,7 +2,7 @@ import { getUserId } from '@/app/lib/api-utils';
 import { NextResponse } from 'next/server';
 import {
     getMsiPlans, getMsiPlanById, createMsiPlan, updateMsiPlan, deleteMsiPlan,
-    getAccountById, createTransaction, bulkCreateTransactions, cuid
+    getAccountById, createTransaction, bulkCreateTransactions, cuid, getDb
 } from '@/app/lib/db';
 
 // GET /api/msi — returns all plans with their child transactions
@@ -11,24 +11,19 @@ export async function GET() {
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     try {
-        // Import DB for raw query of child transactions
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const path = require('path');
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const Database = require('better-sqlite3');
-        const dbPath = (process.env.DATABASE_URL ?? '').replace('file:', '') ||
-            path.join(process.cwd(), 'prisma', 'finanzas.db');
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const db: any = Database(dbPath);
-
+        const db = getDb();
         const plans = await getMsiPlans(userId);
+        const todayStr = new Date().toISOString().slice(0, 10);
+
         const result = plans.map(plan => {
             const txs = db.prepare(
                 `SELECT * FROM NTransaction WHERE msiPlanId = ? AND userId = ? ORDER BY date ASC`
-            ).all(plan.id, userId);
-            return { ...plan, transactions: txs };
+            ).all(plan.id, userId) as { date: string; type: string }[];
+
+            const elapsedMonths = txs.filter(t => t.date <= todayStr && t.type === 'MSI_CHARGE').length;
+            return { ...plan, transactions: txs, paidMonths: elapsedMonths };
         });
-        db.close();
+
         return NextResponse.json(result);
     } catch (error) {
         console.error('GET MSI:', error);
@@ -42,7 +37,7 @@ export async function POST(request: Request) {
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     try {
-        const { totalAmount, months, accountId, categoryId, description, startDate } = await request.json();
+        const { totalAmount, months, accountId, categoryId, description, startDate, isImport } = await request.json();
 
         if (!totalAmount || !months || !accountId) {
             return NextResponse.json({ error: 'Missing required fields: totalAmount, months, accountId' }, { status: 400 });
@@ -60,6 +55,26 @@ export async function POST(request: Request) {
         const total = Number(totalAmount);
         const monthlyAmount = Math.round((total / months) * 100) / 100;
         const parsedStartDate = startDate ? new Date(startDate) : new Date();
+
+        // Si es producto de una importación, debemos evitar duplicar el plan
+        if (isImport) {
+            const existingPlans = await getMsiPlans(userId);
+            const duplicate = existingPlans.find(p => 
+                p.accountId === accountId && 
+                Math.abs(Number(p.totalAmount) - total) < 1 && // Margen de error muy estricto (1 peso max)
+                Number(p.months) === Number(months) && // El plan debe tener los mismos meses
+                p.description.toLowerCase() === (description || '').toLowerCase()
+            );
+            if (duplicate) {
+                // El plan ya existe, retornamos success 200 sin crear nada.
+                return NextResponse.json({
+                    success: true,
+                    msiPlan: { id: duplicate.id },
+                    message: 'Plan MSI ya existente. Omitiendo duplicado.'
+                }, { status: 200 });
+            }
+        }
+
         const planId = cuid();
         const parentTxId = cuid();
 
@@ -95,6 +110,7 @@ export async function POST(request: Request) {
             const chargeDate = new Date(parsedStartDate);
             chargeDate.setMonth(chargeDate.getMonth() + i);
             return {
+                id: cuid(),
                 accountId,
                 categoryId: categoryId || null,
                 amount: monthlyAmount,
@@ -116,7 +132,7 @@ export async function POST(request: Request) {
         }, { status: 201 });
     } catch (error) {
         console.error('POST MSI:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return NextResponse.json({ error: String(error) }, { status: 500 });
     }
 }
 
@@ -137,28 +153,15 @@ export async function PUT(request: Request) {
             categoryId: categoryId !== undefined ? (categoryId ?? null) : existing.categoryId,
         });
 
-        // Update child transaction descriptions if description changed
-        if (description !== undefined) {
-            // eslint-disable-next-line @typescript-eslint/no-require-imports
-            const path = require('path');
-            // eslint-disable-next-line @typescript-eslint/no-require-imports
-            const Database = require('better-sqlite3');
-            const dbPath = (process.env.DATABASE_URL ?? '').replace('file:', '') ||
-                path.join(process.cwd(), 'prisma', 'finanzas.db');
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const db: any = Database(dbPath);
-            db.prepare(
-                `UPDATE NTransaction SET updatedAt=datetime('now') WHERE msiPlanId=? AND userId=?`
-            ).run(id, userId);
-            db.close();
-        }
+        if (!updated) return NextResponse.json({ error: 'MSI plan not updated' }, { status: 500 });
 
         return NextResponse.json(updated);
     } catch (error) {
         console.error('PUT MSI:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return NextResponse.json({ error: String(error) }, { status: 500 });
     }
 }
+
 
 // DELETE /api/msi?id=... — delete plan + all related transactions
 export async function DELETE(request: Request) {

@@ -117,7 +117,7 @@ export default function TransactionTable({ transactions, onRefresh }: Transactio
                                     <td className={styles.categoryCell}>
                                         <span
                                             className={styles.categoryName}
-                                            style={{ borderLeftColor: tx.category?.color || 'var(--on-surface-variant)' } as React.CSSProperties}
+                                            style={{ borderLeftColor: tx.category?.color || 'var(--on-surface-variant)' }}
                                         >
                                             {tx.category?.icon} {tx.category?.name || 'Sin categoría'}
                                         </span>

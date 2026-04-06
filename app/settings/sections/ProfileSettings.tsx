@@ -41,7 +41,7 @@ export default function ProfileSettings() {
 
     return (
         <div className={styles.card}>
-            <h2 className={styles.cardTitle}><User size={14} style={{ display: 'inline', marginRight: 6 }} />Perfil y Cuenta</h2>
+            <h2 className={styles.cardTitle}><User size={14} className={styles.inlineIcon} />Perfil y Cuenta</h2>
 
             {/* Nombre */}
             <div className={styles.field}>
@@ -60,10 +60,9 @@ export default function ProfileSettings() {
                 <label className={styles.fieldLabel} htmlFor="prf-email">Correo electrónico</label>
                 <input
                     id="prf-email"
-                    className={styles.fieldInput}
+                    className={`${styles.fieldInput} ${styles.fieldInputReadOnly}`}
                     value={email}
                     readOnly
-                    style={{ opacity: 0.6, cursor: 'not-allowed' } as React.CSSProperties}
                 />
                 <span className={styles.fieldDesc}>El correo no se puede cambiar desde aquí.</span>
             </div>
@@ -74,8 +73,8 @@ export default function ProfileSettings() {
                     <div className={styles.fieldLabel}>Tema de la aplicación</div>
                     <div className={styles.fieldDesc}>Cambia entre modo oscuro y claro</div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 } as React.CSSProperties}>
-                    <Sun size={14} style={{ color: 'var(--on-surface-variant)' } as React.CSSProperties} />
+                <div className={styles.themeToggleRow}>
+                    <Sun size={14} className={styles.iconMuted} />
                     <label className={styles.toggle} aria-label="Cambiar tema">
                         <input
                             type="checkbox"
@@ -84,7 +83,7 @@ export default function ProfileSettings() {
                         />
                         <span className={styles.toggleSlider} />
                     </label>
-                    <Moon size={14} style={{ color: 'var(--on-surface-variant)' } as React.CSSProperties} />
+                    <Moon size={14} className={styles.iconMuted} />
                 </div>
             </div>
 

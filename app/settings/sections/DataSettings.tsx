@@ -40,7 +40,7 @@ export default function DataSettings() {
     return (
         <div className={styles.card}>
             <h2 className={styles.cardTitle}>
-                <Database size={14} style={{ display: 'inline', marginRight: 6 } as React.CSSProperties} />
+                <Database size={14} className={styles.inlineIcon} />
                 Datos y Privacidad
             </h2>
 
@@ -50,7 +50,7 @@ export default function DataSettings() {
                     <div className={styles.fieldLabel}>Base de datos local</div>
                     <div className={styles.fieldDesc}>SQLite · prisma/finanzas.db</div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 } as React.CSSProperties}>
+                <div className={styles.colEnd}>
                     {dbSize  && <span className={styles.infoPill}><HardDrive size={12} /> {dbSize}</span>}
                     {txCount !== null && <span className={styles.infoPill}>{txCount} transacciones</span>}
                     {!dbSize && !txCount && <span className={styles.fieldDesc}>Calculando...</span>}
@@ -84,21 +84,21 @@ export default function DataSettings() {
             </div>
 
             {/* Privacy */}
-            <div style={{ padding: '12px 16px', borderRadius: 'var(--radius-xl)', background: 'rgba(52,211,153,0.06)', fontSize: 'var(--text-xs)', color: 'var(--on-surface-variant)', lineHeight: 1.6 } as React.CSSProperties}>
+            <div className={styles.infoNote}>
                 🔒 Todos tus datos son almacenados <strong>localmente</strong> en tu dispositivo. No se envían a ningún servidor externo, excepto las llamadas al modelo Gemini para análisis.
             </div>
 
             {/* Zona de peligro */}
-            <div style={{ marginTop: 'var(--space-4)', padding: 'var(--space-4)', borderRadius: 'var(--radius-xl)', border: '1px solid rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.04)' } as React.CSSProperties}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 'var(--space-3)' } as React.CSSProperties}>
-                    <AlertTriangle size={16} style={{ color: '#ef4444' } as React.CSSProperties} />
-                    <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: '#ef4444' } as React.CSSProperties}>Zona de peligro</span>
+            <div className={styles.dangerZone}>
+                <div className={styles.dangerZoneHeader}>
+                    <AlertTriangle size={16} className={styles.dangerIcon} />
+                    <span className={styles.dangerTitle}>Zona de peligro</span>
                 </div>
                 <div className={styles.field}>
-                    <label className={styles.fieldLabel} htmlFor="del-confirm" style={{ color: 'var(--on-surface-variant)' } as React.CSSProperties}>
+                    <label className={styles.fieldLabelMuted} htmlFor="del-confirm">
                         Escribe <strong>ELIMINAR</strong> para confirmar el borrado de cuenta
                     </label>
-                    <div style={{ display: 'flex', gap: 8 } as React.CSSProperties}>
+                    <div className={styles.rowGap}>
                         <input
                             id="del-confirm"
                             className={styles.fieldInput}

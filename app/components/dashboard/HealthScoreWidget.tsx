@@ -104,7 +104,7 @@ export default function HealthScoreWidget() {
 
     const earnedBadges  = data.badges.filter(b => b.earned);
     const pendingBadges = data.badges.filter(b => !b.earned);
-    const ariaExpanded: 'true' | 'false' = showDetail ? 'true' : 'false';
+
 
 
     return (
@@ -168,7 +168,7 @@ export default function HealthScoreWidget() {
             <button
                 onClick={() => setShowDetail(!showDetail)}
                 className={`${styles.healthDetailBtn} ${isDark ? styles.healthDetailBtnDark : styles.healthDetailBtnLight}`}
-                aria-expanded={ariaExpanded}
+                aria-expanded={showDetail}
             >
                 <span>Ver desglose</span>
                 <span>{showDetail ? '▲' : '▼'}</span>

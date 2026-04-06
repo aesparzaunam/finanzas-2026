@@ -56,7 +56,7 @@ export default function HouseholdSettings() {
     return (
         <div className={styles.card}>
             <h2 className={styles.cardTitle}>
-                <Home size={14} style={{ display: 'inline', marginRight: 6 } as React.CSSProperties} />
+                <Home size={14} className={styles.inlineIcon} />
                 Hogar Compartido
             </h2>
 
@@ -72,17 +72,17 @@ export default function HouseholdSettings() {
                 </div>
                 {!status        && <span className={styles.infoPill}>Sin hogar</span>}
                 {status === 'PENDING' && <span className={styles.statusWarn}>⏳ Pendiente</span>}
-                {status === 'ACTIVE'  && <span className={styles.statusOk}><Users size={12} style={{ display: 'inline' } as React.CSSProperties} /> Activo</span>}
+                {status === 'ACTIVE'  && <span className={styles.statusOk}><Users size={12} className={styles.inlineIcon} /> Activo</span>}
             </div>
 
             {/* Invitar */}
             {!data && (
                 <div className={styles.field}>
                     <label className={styles.fieldLabel} htmlFor="hh-email">
-                        <UserPlus size={13} style={{ display: 'inline', marginRight: 4 } as React.CSSProperties} />
+                        <UserPlus size={13} className={styles.inlineIcon} />
                         Invitar pareja o familiar
                     </label>
-                    <div style={{ display: 'flex', gap: 8 } as React.CSSProperties}>
+                    <div className={styles.rowGap}>
                         <input
                             id="hh-email"
                             className={styles.fieldInput}
@@ -114,7 +114,7 @@ export default function HouseholdSettings() {
             {msg && data && <span className={styles.fieldDesc}>{msg}</span>}
 
             {/* Info */}
-            <div style={{ padding: '12px 16px', borderRadius: 'var(--radius-xl)', background: 'rgba(146,170,255,0.06)', fontSize: 'var(--text-xs)', color: 'var(--on-surface-variant)', lineHeight: 1.6 } as React.CSSProperties}>
+            <div className={styles.infoNoteBlue}>
                 💡 El hogar compartido te permite ver el patrimonio consolidado con otro usuario. Cada usuario mantiene sus propias cuentas y transacciones privadas.
             </div>
         </div>

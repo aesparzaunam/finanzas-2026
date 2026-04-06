@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Scratch test scripts (use CommonJS require by design)
+    "test_*.js",
+    "test_*.mjs",
   ]),
   {
     rules: {

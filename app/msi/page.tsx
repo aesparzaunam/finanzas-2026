@@ -146,16 +146,23 @@ export default function MSIPage() {
     };
 
     const handleUpdate = async (updatedPlan: MSIPlan) => {
+        // Solo enviar campos editables, nunca el objeto plan completo
         const res = await fetch('/api/msi', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: updatedPlan.id, description: updatedPlan.description, categoryId: updatedPlan.categoryId })
+            body: JSON.stringify({
+                id: updatedPlan.id,
+                description: updatedPlan.description,
+                categoryId: updatedPlan.categoryId ?? null,
+            })
         });
         if (res.ok) {
             const plans = await fetch('/api/msi').then(r => r.json());
-            setMsiPlans(plans);
+            if (Array.isArray(plans)) setMsiPlans(plans);
         } else {
-            throw new Error('Failed to update');
+            let msg = 'Failed to update';
+            try { const body = await res.json(); msg = body?.error || msg; } catch { /* ignore */ }
+            throw new Error(msg);
         }
     };
 
@@ -339,15 +346,15 @@ export default function MSIPage() {
                     </p>
                 </div>
             ) : (
-                <div className={styles.grid}>
+                <div className={msiStyles.grid}>
                     {filteredPlans.map((plan: MSIPlan) => {
                         const progressWidth = `${(plan.paidMonths / plan.months) * 100}%`;
                         const remaining = Number(plan.monthlyAmount) * (plan.months - plan.paidMonths);
                         return (
-                            <div key={plan.id} className={styles.card}>
-                                <div className={`${styles.flexBetween} ${styles.alignStart}`}>
+                            <div key={plan.id} className={msiStyles.card}>
+                                <div className={`${msiStyles.flexBetween} ${msiStyles.alignStart}`}>
                                     <div>
-                                        <div className={styles.cardTitle}>{plan.description || 'Compra MSI'}</div>
+                                        <div className={msiStyles.cardTitle}>{plan.description || 'Compra MSI'}</div>
                                         <span className={msiStyles.cardAccountBadge}>
                                             💳 {accountName(plan.accountId)}
                                         </span>
@@ -358,27 +365,27 @@ export default function MSIPage() {
                                     </div>
                                 </div>
 
-                                <div className={styles.cardValue}>{fmt(plan.totalAmount)}</div>
+                                <div className={msiStyles.cardValue}>{fmt(plan.totalAmount)}</div>
 
-                                <div className={`${styles.flexBetween} ${styles.textSmSecondary}`}>
+                                <div className={`${msiStyles.flexBetween} ${msiStyles.textSmSecondary}`}>
                                     <span>{plan.months} meses</span>
                                     <span>{fmt(plan.monthlyAmount)}/mes</span>
                                 </div>
 
-                                <div className={styles.mt3}>
-                                    <div className={`${styles.flexBetween} ${styles.textXsMuted} ${styles.mb4}`}>
+                                <div className={msiStyles.mt3}>
+                                    <div className={`${msiStyles.flexBetween} ${msiStyles.textXsMuted} ${msiStyles.mb4}`}>
                                         <span>Progreso</span>
                                         <span>{plan.paidMonths}/{plan.months} meses</span>
                                     </div>
-                                    <div className={styles.progressBarWrapper}>
+                                    <div className={msiStyles.progressBarWrapper}>
                                         <StyledDiv
-                                            className={styles.progressBar}
+                                            className={msiStyles.progressBar}
                                             applyStyle={{ width: progressWidth }}
                                         />
                                     </div>
                                 </div>
 
-                                <div className={`${styles.flexBetween} ${styles.mt2} ${styles.textXsMuted}`}>
+                                <div className={`${msiStyles.flexBetween} ${msiStyles.mt2} ${msiStyles.textXsMuted}`}>
                                     <span>Inicio: {formatDate(plan.startDate)}</span>
                                     <span className={msiStyles.remainingTag}>Por pagar: {fmt(remaining)}</span>
                                 </div>

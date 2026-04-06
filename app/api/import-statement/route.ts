@@ -88,9 +88,9 @@ async function resolveOrCreateAccount(
 
 async function extractTextFromPDF(buffer: Buffer): Promise<string> {
     try {
-        const pdfParseModule = await import('pdf-parse');
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const pdfParse = (pdfParseModule as any).default ?? pdfParseModule;
+        // @ts-expect-error type missing
+        const pdfParseModule = await import('pdf-parse/lib/pdf-parse.js');
+        const pdfParse = (pdfParseModule).default ?? pdfParseModule;
         const result   = await pdfParse(buffer);
         const text     = result.text?.trim() ?? '';
         if (text.length >= 50) {
@@ -147,18 +147,10 @@ export async function POST(request: Request) {
         // ── Extraer texto ────────────────────────────────────────────────────
         let documentText: string;
         let source: ImportResultAI['source'];
-        let bank = 'AUTO_DETECTADO';
 
         if (filename.endsWith('.pdf')) {
             documentText = await extractTextFromPDF(buffer);
             source = 'pdf_ai';
-            if      (filename.includes('amex'))       bank = 'AMEX';
-            else if (filename.includes('bbva'))        bank = 'BBVA';
-            else if (filename.includes('banorte'))     bank = 'BANORTE';
-            else if (filename.includes('mercado'))     bank = 'MERCADO_PAGO';
-            else if (filename.includes('liverpool'))   bank = 'LIVERPOOL';
-            else if (filename.includes('hsbc'))        bank = 'HSBC';
-            else if (filename.includes('santander'))   bank = 'SANTANDER';
         } else if (filename.endsWith('.csv')) {
             documentText = extractTextFromSpreadsheet(buffer, true);
             source = 'csv';
@@ -176,22 +168,48 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'No se encontró contenido legible en el archivo.' }, { status: 400 });
         }
 
-        // ── Llamar al LLM local ──────────────────────────────────────────────
-        console.log(`[import-statement] Enviando a Ollama (${process.env.LOCAL_LLM_MODEL_NAME || 'qwen-claude'}) ${documentText.length} chars…`);
-        const { transactions, suggestedAccountId, detectedAccount } = await callLocalLLM(
-            documentText,
-            userCategories,
-            userAccounts,
-        );
+        // ── FASE 1: Parser regex + categorización por keywords (sin LLM) ─────
+        const { parseStatement } = await import('@/app/lib/statement-parser');
+        // eslint-disable-next-line
+        try { require('fs').writeFileSync('C:\\Mis apps\\finanzas -2026 v2\\amx_debug.txt', documentText, 'utf8'); } catch (e) {}
+        const catNames = userCategories.map(c => c.name);
+        const parsed   = parseStatement(documentText, catNames);
+        let bank       = parsed.bank;
+        let detectedAccount: { name: string; type: 'BANK' | 'CREDIT' | 'INVESTMENT' | 'LOAN'; bank: string } | undefined = parsed.detectedAccount;
 
-        // Actualizar nombre de banco desde la cuenta detectada si está disponible
-        if (detectedAccount?.bank) bank = detectedAccount.bank;
+        console.log(`[import-statement] Parser:${parsed.parserUsed} → ${parsed.transactions.length} txs (banco:${bank})`);
+
+        let transactions: ParsedTransactionAI[];
+
+        if (parsed.transactions.length >= 3) {
+            // ✅ Éxito: convertir directamente, sin LLM
+            const categoryMap = new Map(userCategories.map(c => [c.name.toLowerCase(), c.id]));
+            transactions = parsed.transactions.map(t => ({
+                date:                t.date,
+                description:         t.description,
+                amount:              t.amount,
+                type:                t.type,
+                suggestedCategory:   t.suggestedCategory || 'Otros',
+                suggestedCategoryId: categoryMap.get((t.suggestedCategory || '').toLowerCase()),
+                isMSI:               t.isMSI || false,
+                msiCurrentMonth:     t.msiCurrentMonth ?? null,
+                msiTotalMonths:      t.msiTotalMonths ?? null,
+                msiTotalAmount:      t.msiTotalAmount ?? null,
+            }));
+        } else {
+            // ⚠️ Fallback LLM solo si regex no encontró nada
+            console.log('[import-statement] Regex insuficiente → LLM fallback');
+            const llmResult = await callLocalLLM(documentText, userCategories, userAccounts);
+            transactions    = llmResult.transactions;
+            if (llmResult.detectedAccount) detectedAccount = llmResult.detectedAccount;
+            if (llmResult.detectedAccount?.bank) bank = llmResult.detectedAccount.bank;
+        }
 
         // ── Auto-crear la cuenta si no existe ────────────────────────────────
         const resolvedAccountId = await resolveOrCreateAccount(
             userId,
             userAccounts,
-            suggestedAccountId,
+            undefined,
             detectedAccount
         );
 
@@ -213,3 +231,4 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: msg }, { status: 500 });
     }
 }
+

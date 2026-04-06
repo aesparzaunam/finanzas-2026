@@ -33,7 +33,7 @@ export interface ParsedTransactionAI {
     date:                 string;
     description:          string;
     amount:               number;
-    type:                 'INCOME' | 'EXPENSE';
+    type:                 'INCOME' | 'EXPENSE' | 'MSI_CHARGE';
     suggestedCategory:    string;
     suggestedCategoryId?: string;
     isMSI:                boolean;
@@ -142,54 +142,17 @@ Categorías disponibles:
 - Si el monto parece inválido (negativo o cero), omite esa transacción.`;
 }
 
-// ── callLocalLLM ──────────────────────────────────────────────────────────────
 
-/**
- * Llama a Ollama con el texto del documento y devuelve transacciones parseadas
- * junto con la cuenta detectada automáticamente.
- */
-export async function callLocalLLM(
-    documentText: string,
-    categories:   { id: string; name: string }[],
-    accounts:     { id: string; name: string; type: string }[]
-): Promise<{
+// ── Helper: convierte parsed JSON → resultado tipado ─────────────────────────
+
+function buildTransactionResult(
+    parsed: Record<string, unknown>,
+    categories: { id: string; name: string }[]
+): {
     transactions:      ParsedTransactionAI[];
     suggestedAccountId?: string;
     detectedAccount?: { name: string; type: 'BANK' | 'CREDIT' | 'INVESTMENT' | 'LOAN'; bank: string };
-}> {
-    const client       = getLocalLLMClient();
-    const model        = getLocalLLMModel();
-    const systemPrompt = buildSystemPrompt(categories, accounts);
-
-    // Truncar a 12 000 caracteres para modelos con contexto limitado
-    const truncatedText = documentText.length > 12000
-        ? documentText.slice(0, 12000) + '\n[DOCUMENTO TRUNCADO - Extrae solo los movimientos visibles arriba]'
-        : documentText;
-
-    const response = await client.chat.completions.create({
-        model,
-        temperature: 0.0,        // determinístico: extracción de datos, no creatividad
-        response_format: { type: 'json_object' },
-        messages: [
-            { role: 'system', content: systemPrompt },
-            {
-                role: 'user',
-                content: `Extrae TODOS los movimientos individuales de este estado de cuenta. No incluyas saldos ni totales. Devuelve solo el JSON:\n\n${truncatedText}`,
-            },
-        ],
-    });
-
-    // Strip de thinking tokens de Qwen3 antes de parsear JSON
-    const raw    = stripThinking(response.choices[0]?.message?.content ?? '{}') || '{}';
-    let parsed: Record<string, unknown>;
-    try {
-        parsed = JSON.parse(raw);
-    } catch {
-        // Si devuelve JSON envuelto en markdown, intentar extraerlo
-        const match = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
-        parsed = match ? JSON.parse(match[1]) : {};
-    }
-
+} {
     const rawTransactions: Record<string, unknown>[] = Array.isArray(parsed)
         ? parsed
         : Array.isArray(parsed.transactions) ? parsed.transactions : [];
@@ -214,7 +177,7 @@ export async function callLocalLLM(
     const categoryMap = new Map(categories.map(c => [c.name.toLowerCase(), c.id]));
 
     const transactions: ParsedTransactionAI[] = rawTransactions
-        .filter(item => item.amount && Number(item.amount) > 0) // descartar montos inválidos
+        .filter(item => item.amount && Number(item.amount) > 0)
         .map(item => {
             const catName    = String(item.suggestedCategory ?? '').trim();
             const catId      = categoryMap.get(catName.toLowerCase());
@@ -239,6 +202,60 @@ export async function callLocalLLM(
 
     return { transactions, suggestedAccountId, detectedAccount };
 }
+
+// ── callLocalLLM ──────────────────────────────────────────────────────────────
+
+/**
+ * Extrae transacciones de un estado de cuenta.
+ * Usa Gemini Flash si hay API key (rápido ~5-15s), Ollama como fallback.
+ */
+export async function callLocalLLM(
+    documentText: string,
+    categories:   { id: string; name: string }[],
+    accounts:     { id: string; name: string; type: string }[]
+): Promise<{
+    transactions:      ParsedTransactionAI[];
+    suggestedAccountId?: string;
+    detectedAccount?: { name: string; type: 'BANK' | 'CREDIT' | 'INVESTMENT' | 'LOAN'; bank: string };
+}> {
+    const systemPrompt = buildSystemPrompt(categories, accounts);
+    const ollamaClient = getLocalLLMClient();
+    const ollamaModel  = getLocalLLMModel(); // → antigravity-finance-llm (gpt-oss-20b)
+
+    // gpt-oss-20b tiene ctx=8192, podemos pasar más contexto que el Qwen anterior
+    const truncatedText = documentText.length > 6000
+        ? documentText.slice(0, 6000) + '\n[DOCUMENTO TRUNCADO]'
+        : documentText;
+
+    console.log(`[callLocalLLM] Modelo: ${ollamaModel} | Chars: ${truncatedText.length}`);
+
+    const response = await ollamaClient.chat.completions.create({
+        model:       ollamaModel,
+        temperature: 0.0,
+        max_tokens:  2000,
+        messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user',   content: `Extrae TODOS los movimientos del estado de cuenta. Devuelve SOLO el JSON:\n\n${truncatedText}` },
+        ],
+    });
+
+    const raw = stripThinking(response.choices[0]?.message?.content ?? '{}') || '{}';
+
+    // Parsing en cascada: JSON directo → bloque markdown → regex
+    let parsed: Record<string, unknown> = {};
+    try { parsed = JSON.parse(raw); }
+    catch {
+        const mdMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+        if (mdMatch) { try { parsed = JSON.parse(mdMatch[1]); } catch { /* continúa */ } }
+        if (!parsed || Object.keys(parsed).length === 0) {
+            const jsonMatch = raw.match(/\{[\s\S]*\}/);
+            if (jsonMatch) { try { parsed = JSON.parse(jsonMatch[0]); } catch { /* sin datos */ } }
+        }
+    }
+
+    return buildTransactionResult(parsed, categories);
+}
+
 
 // ── Prompt 2: Detección y confirmación de suscripciones ───────────────────────
 //
@@ -464,7 +481,8 @@ Guía rápida para México:
                 { role: 'user',   content: `Categoriza esta transacción: "${description}"` },
             ],
         });
-        const raw    = response.choices[0]?.message?.content ?? '{}';
+        const rawContent = response.choices[0]?.message?.content ?? '{}';
+        const raw = stripThinking(rawContent) || '{}';
         const parsed = JSON.parse(raw);
         return {
             categoryId:   typeof parsed.categoryId === 'string' ? parsed.categoryId : null,
@@ -534,15 +552,23 @@ Top gastos: ${topStr}`;
         const client = getLocalLLMClient();
         const model  = getLocalLLMModel();
         const response = await client.chat.completions.create({
-            model, temperature: 0.4, max_tokens: 150,
-            response_format: { type: 'json_object' },
+            model, temperature: 0.4, max_tokens: 200,
+            // Sin response_format: Ollama local no lo soporta y lanza error
             messages: [
                 { role: 'system', content: systemPrompt },
                 { role: 'user',   content: userContent },
             ],
         });
-        const raw    = response.choices[0]?.message?.content ?? '{}';
-        const parsed = JSON.parse(raw);
+        let raw = response.choices[0]?.message?.content ?? '';
+
+        // Limpiar bloques <think> del modelo reasoning
+        raw = raw.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/<think>[\s\S]*/gi, '').trim();
+
+        // Extraer el JSON aunque venga envuelto en ```json ... ``` o texto extra
+        const jsonMatch = raw.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) return fallback;
+
+        const parsed = JSON.parse(jsonMatch[0]);
         if (!parsed.insight) return fallback;
         return {
             insight: String(parsed.insight),
@@ -555,16 +581,7 @@ Top gastos: ${topStr}`;
 // ── Prompt C: Narrativa mensual individual ─────────────────────────────────────
 
 export function buildIndividualNarrativePrompt(): string {
-    return `Eres un asesor financiero personal amigable y empático. Analistas financieros en español para usuarios mexicanos.
-
-Tu tarea: redactar UN párrafo de 4–6 oraciones que resuma el mes financiero personal.
-
-ESTRUCTURA: 1) Balance (ahorro o déficit), 2) Top 2–3 categorías con montos,
-3) Dato llamativo (suscripciones, MSI, variación), 4) Sugerencia o refuerzo positivo,
-5) Frase de cierre motivacional.
-
-REGLAS: Prosa fluida, sin listas. Tono cálido. Pesos mexicanos ($). 60–130 palabras.
-No inventes datos que no estén en el contexto.`;
+    return `Eres un asesor financiero personal en México. Redacta UN párrafo fluido (60-120 palabras) con: balance del mes, top categorías con montos en pesos, un dato llamativo y una sugerencia breve. Sin listas. Tono cálido y directo. Solo usa los datos dados.`;
 }
 
 // ── Prompt G: Auto-título para transacciones sin descripción ───────────────────

@@ -16,7 +16,8 @@ export async function GET(request: Request) {
         const limit   = Math.min(parseInt(url.searchParams.get('limit') || '50', 10), 200);
         const after   = url.searchParams.get('after') || undefined;
         const from    = url.searchParams.get('from') || undefined;
-        const to      = url.searchParams.get('to') || undefined;
+        // Si no mandan toDate, no queremos mostrar transacciones del futuro generadas por MSI
+        const to      = url.searchParams.get('to') || new Date().toISOString().slice(0, 10);
         const type    = url.searchParams.get('type') || undefined;
         const accountId  = url.searchParams.get('accountId') || undefined;
         const categoryId = url.searchParams.get('categoryId') || undefined;
@@ -141,7 +142,7 @@ function createTransactionSync(db: any, userId: string, data: Record<string, unk
     const id = 'c' + randomBytes(11).toString('hex');
     const ts = new Date().toISOString();
     db.prepare(`INSERT INTO NTransaction (id,userId,accountId,categoryId,amount,type,date,description,tags,msiPlanId,isParent,parentId,toAccountId,recurringPaymentId,isDeductible,createdById,importSource,createdAt,updatedAt)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,null,?,null,null,?,?)`)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,null,?,null,?,?,?)`)
         .run(id, userId, data.accountId, data.categoryId, data.amount, data.type, data.date,
              data.description, data.tags, data.msiPlanId, data.isParent, data.parentId,
              data.toAccountId, data.isDeductible, data.importSource || null, ts, ts);
